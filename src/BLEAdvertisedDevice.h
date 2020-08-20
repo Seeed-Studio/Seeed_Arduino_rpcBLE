@@ -49,6 +49,7 @@ public:
 	
 private:
 	friend class BLEScan;
+	void clear(void);
     bool m_haveAppearance;
 	bool m_haveServiceUUID;
 	bool m_haveTXPower;
@@ -57,19 +58,35 @@ private:
 	bool m_haveRSSI;
 	bool m_haveServiceData;
 	
-	std::string m_name;
-	uint16_t    m_appearance;
+	T_GAP_ADV_EVT_TYPE _advType;
+	T_GAP_REMOTE_ADDR_TYPE _addrType;
+	
+	
+	
 	BLEAddress  m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
 	std::vector<BLEUUID> m_serviceUUIDs;
-	int8_t      m_txPower;
 	
+	
+	uint8_t m_data[31] ={0}; // array for storing formatted advertising data for receiving and sending
+    uint8_t m_dataSize = 0;
     int         m_rssi;
 	BLEScan*    m_pScan;
 	uint8_t     m_adFlag;
+	uint8_t     m_serviceCount = 0;
+	std::string      m_name;
+	int8_t      m_txPower = 0;
+	uint16_t    m_appearance = 0;
+    uint16_t    m_manufacturer = 0;
+    uint8_t     m_manufacturerData[27] = {0};
+    uint8_t     m_manufacturerDataLength = 0;
+	BLEUUID     _serviceList[7];        // A 31byte advert can only fit a maximum of 7 service UUIDs of 16bit length
+	uint8_t     _serviceCount = 0;
+
+	
 	int         m_deviceType;
-	std::string m_manufacturerData;
 //	std::vector<std::string> m_serviceData;
 	
+	void parseAdvertisement(T_LE_CB_DATA *p_data);
 	void setAddress(BLEAddress address);
 	void setRSSI(int rssi);
 	void setScan(BLEScan* pScan);

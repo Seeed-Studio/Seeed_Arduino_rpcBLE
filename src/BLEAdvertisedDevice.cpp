@@ -16,15 +16,15 @@
 #include <sstream>
 #include "BLEAdvertisedDevice.h"
 
+
 BLEAdvertisedDevice::BLEAdvertisedDevice() {
+
 	m_adFlag           = 0;
 	m_appearance       = 0;
 	m_deviceType       = 0;
-	m_manufacturerData = "";
+//	m_manufacturerData = "";
 	m_name             = "";
 	m_rssi             = -9999;
-//	m_serviceData      = {};
-//	m_serviceDataUUIDs = {};
 	m_txPower          = 0;
 	m_pScan            = nullptr;
 
@@ -37,6 +37,8 @@ BLEAdvertisedDevice::BLEAdvertisedDevice() {
 	m_haveTXPower          = false;
 
 } // BLEAdvertisedDevice
+
+
 
 #if 0
 /**
@@ -198,11 +200,137 @@ void BLEAdvertisedDevice::setScan(BLEScan* pScan) {
 } // setScan
 
 
-
 void BLEAdvertisedDevice::setAddressType(T_GAP_REMOTE_ADDR_TYPE type) {
 	m_addressType = type;
 }
 
+void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
+	
+    T_LE_SCAN_INFO *scan_info = p_data->p_le_scan_info;
+    clear();
+
+    _advType = (scan_info->adv_type);
+    _addrType = (scan_info->remote_addr_type);
+	//set m_address
+    BLEAddress advertisedAddress(scan_info->bd_addr);
+	m_address = advertisedAddress;
+	
+    m_rssi = (scan_info->rssi);
+    memcpy(m_data, scan_info->data, scan_info->data_len);
+    m_dataSize = scan_info->data_len;
+
+    uint8_t buffer[32];
+    uint8_t pos = 0;
+
+    while (pos < scan_info->data_len) {
+        // Length of the AD structure.
+        uint8_t length = scan_info->data[pos++];    // length of following data field = length of advert data field + 1 (adtype)
+        uint8_t type;
+
+        if ((length > 0x01) && ((pos + length) <= 31)) {
+            // Copy the AD Data to buffer.
+            memcpy(buffer, scan_info->data + pos + 1, length - 1);
+            // AD Type, one octet.
+            type = scan_info->data[pos];
+
+//            if (BTDEBUG) printf("parseScanInfo: AD Structure Info: AD type 0x%x, AD Data Length %d\r\n", type, (length - 1));
+
+            switch (type) {
+                case GAP_ADTYPE_FLAGS: {
+                    // (0x01) -- LE Limited Discoverable Mode
+                    // (0x02) -- LE General Discoverable Mode
+                    // (0x04) -- BR/EDR Not Supported
+                    // (0x08) -- Simultaneous LE and BR/EDR to Same Device Capable (Controller)
+                    // (0x10) -- Simultaneous LE and BR/EDR to Same Device Capable (Host)
+                    m_adFlag = (scan_info->data[(pos + 1)]);
+                    break;
+                }
+
+                case GAP_ADTYPE_16BIT_MORE:
+                case GAP_ADTYPE_16BIT_COMPLETE: {
+                    uint8_t *p_uuid = buffer;
+                    uint8_t i = length - 1;
+
+                    while (i >= 2) {
+                        _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 2));
+                        p_uuid += 2;
+                        i -= 2;
+                    }
+                    break;
+                }
+
+                case GAP_ADTYPE_32BIT_MORE:
+                case GAP_ADTYPE_32BIT_COMPLETE: {
+                    uint8_t *p_uuid = buffer;
+                    uint8_t i = length - 1;
+
+                    while (i >= 4) {
+                        _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 4));
+                        p_uuid += 4;
+                        i -= 4;
+                    }
+                    break;
+                }
+
+                case GAP_ADTYPE_128BIT_MORE:
+                case GAP_ADTYPE_128BIT_COMPLETE: {
+                    uint8_t *p_uuid = buffer;
+                    _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 16));
+                    break;
+                }
+
+                case GAP_ADTYPE_LOCAL_NAME_SHORT:
+                case GAP_ADTYPE_LOCAL_NAME_COMPLETE: {
+                    buffer[length - 1] = '\0';
+                    m_name = (std::string((char*)buffer));
+                    break;
+                }
+
+                case GAP_ADTYPE_POWER_LEVEL: {
+                    m_txPower = (scan_info->data[(pos + 1)]);
+                    break;
+                }
+
+                case GAP_ADTYPE_APPEARANCE: {
+                    m_appearance = (((uint16_t)buffer[1] << 8)|(buffer[0]));
+                    break;
+                }
+
+                case GAP_ADTYPE_MANUFACTURER_SPECIFIC: {
+                    uint8_t data_len = length - 3;      // adtype (-1), manufacturerID (-2)
+                    m_manufacturer = (((uint16_t)buffer[1] << 8)|(buffer[0]));
+                    memcpy(m_manufacturerData, (buffer + 2), data_len);
+                    m_manufacturerDataLength = data_len;
+                    break;
+                }
+
+                default: {
+                    uint8_t i = 0;
+                    for (i = 0; i < (length - 1); i++) {
+//                        if (BTDEBUG) printf("parseScanInfo: Unhandled Data = 0x%x\r\n", scan_info->data[(pos + i)]);
+                    }
+                    break;
+                }
+            }
+        }
+        pos += length;
+    }			
+					
+
+} // parseAdvertisement
+
+void BLEAdvertisedDevice::clear() {
+    memset(m_data, 0, sizeof(m_data));
+    m_dataSize = 0;
+    m_rssi = 0;
+    m_adFlag = 0;
+    m_serviceCount = 0;
+    m_name = std::string("");
+    m_txPower = 0;
+    m_appearance = 0;
+    m_manufacturer = 0;
+    m_manufacturerDataLength = 0;
+}
 
 
 
