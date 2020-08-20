@@ -25,6 +25,8 @@ class BLEAddress {
 public:
     BLEAddress(bd_addr_t address);
 	BLEAddress(std::string stringAddress);
+	bool           equals(BLEAddress otherAddress);
+	bd_addr_t* getNative();
 	std::string    toString();
 
 private:

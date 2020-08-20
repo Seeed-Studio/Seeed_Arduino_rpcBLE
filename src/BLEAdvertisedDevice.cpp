@@ -39,25 +39,17 @@ BLEAdvertisedDevice::BLEAdvertisedDevice() {
 } // BLEAdvertisedDevice
 
 
-
-#if 0
 /**
- * @brief Get the service data UUID.
- * @return The service data UUID.
+ * @brief Check advertised serviced for existence required UUID
+ * @return Return true if service is advertised
  */
-BLEUUID BLEAdvertisedDevice::getServiceDataUUID() {
-	return m_serviceDataUUIDs[0];
-} // getServiceDataUUID
+bool BLEAdvertisedDevice::isAdvertisingService(BLEUUID uuid){
+	for (int i = 0; i < 7; i++) {
+		if (_serviceList[i].equals(uuid)) return true;
+	}
+	return false;
+}
 
-/**
- * @brief Get the service data UUID.
- * @return The service data UUID.
- */
-BLEUUID BLEAdvertisedDevice::getServiceDataUUID(int i) {
-	return m_serviceDataUUIDs[i];
-} // getServiceDataUUID
-
-#endif
 
 /**
  * @brief Get the Service UUID.
@@ -75,6 +67,15 @@ BLEUUID BLEAdvertisedDevice::getServiceUUID(int i) {
 	return m_serviceUUIDs[i];
 } // getServiceUUID
 
+
+
+/**
+ * @brief Set the Service UUID for this device.
+ * @param [in] serviceUUID The discovered serviceUUID
+ */
+void BLEAdvertisedDevice::setServiceUUID(BLEUUID serviceUUID) {
+	m_haveServiceUUID = true;
+} // setServiceUUID
 
 
 /**

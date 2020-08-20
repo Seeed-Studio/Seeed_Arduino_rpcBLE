@@ -132,3 +132,44 @@ const char* BLEUUID::str() {
     }
     return _str;
 }
+
+/**
+ * @brief Compare a UUID against this UUID.
+ *
+ * @param [in] uuid The UUID to compare against.
+ * @return True if the UUIDs are equal and false otherwise.
+ */
+bool BLEUUID::equals(BLEUUID uuid) {
+	//log_d("Comparing: %s to %s", toString().c_str(), uuid.toString().c_str());
+	if (!m_valueSet || !uuid.m_valueSet) return false;
+
+	if (uuid.m_uuid.len != m_uuid.len) {
+		return uuid.toString() == toString();
+	}
+
+	if (uuid.m_uuid.len == UUID_LEN_16) {
+		return uuid.m_uuid.uuid.uuid16 == m_uuid.uuid.uuid16;
+	}
+
+	if (uuid.m_uuid.len == UUID_LEN_32) {
+		return uuid.m_uuid.uuid.uuid32 == m_uuid.uuid.uuid32;
+	}
+
+	return memcmp(uuid.m_uuid.uuid.uuid128, m_uuid.uuid.uuid128, 16) == 0;
+} // equals
+
+/**
+ * @brief Get the native UUID value.
+ *
+ * @return The native UUID value or NULL if not set.
+ */
+bt_uuid_t* BLEUUID::getNative() {
+	//log_d(">> getNative()")
+	if (m_valueSet == false) {
+		return nullptr;
+	}
+	return &m_uuid;
+} // getNative
+
+
+

@@ -46,6 +46,7 @@ public:
     bool        haveAppearance();
 	
 	void setAddressType(T_GAP_REMOTE_ADDR_TYPE type);
+	bool		isAdvertisingService(BLEUUID uuid);
 	
 private:
 	friend class BLEScan;
@@ -57,15 +58,14 @@ private:
 	bool m_haveName;
 	bool m_haveRSSI;
 	bool m_haveServiceData;
+	std::vector<BLEUUID> m_serviceUUIDs;
 	
 	T_GAP_ADV_EVT_TYPE _advType;
 	T_GAP_REMOTE_ADDR_TYPE _addrType;
 	
 	
 	
-	BLEAddress  m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
-	std::vector<BLEUUID> m_serviceUUIDs;
-	
+	BLEAddress  m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");	
 	
 	uint8_t m_data[31] ={0}; // array for storing formatted advertising data for receiving and sending
     uint8_t m_dataSize = 0;
@@ -73,7 +73,7 @@ private:
 	BLEScan*    m_pScan;
 	uint8_t     m_adFlag;
 	uint8_t     m_serviceCount = 0;
-	std::string      m_name;
+	std::string m_name;
 	int8_t      m_txPower = 0;
 	uint16_t    m_appearance = 0;
     uint16_t    m_manufacturer = 0;
@@ -90,6 +90,7 @@ private:
 	void setAddress(BLEAddress address);
 	void setRSSI(int rssi);
 	void setScan(BLEScan* pScan);
+	void setServiceUUID(BLEUUID serviceUUID);
 	T_GAP_REMOTE_ADDR_TYPE m_addressType;
 };
 /**

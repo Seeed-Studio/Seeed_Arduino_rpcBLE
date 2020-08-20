@@ -13,6 +13,7 @@
 #include "BLEAdvertisedDevice.h"
 #include "FreeRTOS.h"
 #include "Seeed_erpcUnified.h"
+
 class BLEScan;
 class BLEAdvertisedDeviceCallbacks;
 class BLEAdvertisedDevice;
@@ -50,6 +51,7 @@ public:
 	void			clearResults();
     static uint8_t                _scanProcessing;	
 	BLEScanResults                m_scanResults;
+    void           stop();
 private:
     BLEScan();   // One doesn't create a new instance instead one asks the BLEDevice for the singleton.
 	friend class BLEDevice;

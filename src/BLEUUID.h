@@ -36,6 +36,8 @@ public:
     BLEUUID(const char * str);      // Build a BLEUUID object from an UUID string. Use of hyphens (-) to seperate UUID sections in the string is acceptable.
     BLEUUID(uint8_t* data, uint8_t length);	
 	const char* str();
+	bool           equals(BLEUUID uuid);
+	bt_uuid_t* getNative();
 
 private:
     bool          m_valueSet = false;   // Is there a value set for this instance.

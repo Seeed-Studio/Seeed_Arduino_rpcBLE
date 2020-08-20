@@ -15,6 +15,25 @@
 
 
 /**
+ * @brief Determine if this address equals another.
+ * @param [in] otherAddress The other address to compare against.
+ * @return True if the addresses are equal.
+ */
+bool BLEAddress::equals(BLEAddress otherAddress) {
+	return memcmp(otherAddress.getNative(), m_address, 6) == 0;
+} // equals
+
+
+/**
+ * @brief Return the native representation of the address.
+ * @return The native representation of the address.
+ */
+bd_addr_t *BLEAddress::getNative() {
+	return &m_address;
+} // getNative
+
+
+/**
  * @brief Create an address from a hex string
  *
  * A hex string is of the format:

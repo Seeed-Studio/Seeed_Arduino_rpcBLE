@@ -105,6 +105,7 @@ void start_Scan_1() {
     }	
 }
 
+
 void stopScan() {
     if (BLEScan::_scanProcessing) {
 		//停止扫描
@@ -115,6 +116,15 @@ void stopScan() {
        Serial.printf("There is no scan\n\r");
     }
 }
+
+/**
+ * @brief Stop an in progress scan.
+ * @return N/A.
+ */
+void BLEScan::stop() {
+    le_scan_stop();
+} // stop
+
 
 
 /**
