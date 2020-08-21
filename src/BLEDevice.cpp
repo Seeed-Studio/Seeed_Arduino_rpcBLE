@@ -14,7 +14,17 @@
 
 bool       initialized          = false;  
 BLEScan*   BLEDevice::_pBLEScan   = nullptr;
+BLEClient* BLEDevice::m_pClient = nullptr;
 
+
+/**
+ * @brief Create a new instance of a client.
+ * @return A new instance of the client.
+ */
+/* STATIC */ BLEClient* BLEDevice::createClient() {
+	m_pClient = new BLEClient();
+	return m_pClient;
+} // createClient
 
 /**
  * @brief Retrieve the Scan object that we use for scanning.
@@ -43,6 +53,8 @@ BLEScan*   BLEDevice::_pBLEScan   = nullptr;
 	rpc_gap_config_max_le_link_num(3);
 	rpc_le_gap_init(3);
 	le_register_app_cb(gapEventHandler);
+	
+	
 	rpc_ble_start();
     Serial.printf("BLEDevice::init...................");
 	}

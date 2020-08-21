@@ -39,6 +39,10 @@ BLEAdvertisedDevice::BLEAdvertisedDevice() {
 } // BLEAdvertisedDevice
 
 
+T_GAP_REMOTE_ADDR_TYPE BLEAdvertisedDevice::getAddressType() {
+	return _addrType;
+}
+
 /**
  * @brief Check advertised serviced for existence required UUID
  * @return Return true if service is advertised

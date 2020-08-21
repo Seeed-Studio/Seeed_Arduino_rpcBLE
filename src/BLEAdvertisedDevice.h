@@ -47,6 +47,7 @@ public:
 	
 	void setAddressType(T_GAP_REMOTE_ADDR_TYPE type);
 	bool		isAdvertisingService(BLEUUID uuid);
+	T_GAP_REMOTE_ADDR_TYPE getAddressType();
 	
 private:
 	friend class BLEScan;
