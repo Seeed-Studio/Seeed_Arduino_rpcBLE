@@ -28,9 +28,12 @@ public:
 	bool           equals(BLEAddress otherAddress);
 	bd_addr_t* getNative();
 	std::string    toString();
+	
+	uint8_t* data();
 
 private:
-	bd_addr_t m_address;        
+	bd_addr_t m_address;    
+    uint8_t _btAddr[6] = {0};   // BT address is stored MSB at _btAddr[5]    
 };
 
 #endif /* COMPONENTS_CPP_UTILS_BLEADDRESS_H_ */

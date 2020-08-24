@@ -15,6 +15,7 @@
 bool       initialized          = false;  
 BLEScan*   BLEDevice::_pBLEScan   = nullptr;
 BLEClient* BLEDevice::m_pClient = nullptr;
+std::map<uint16_t, conn_status_t> BLEDevice::m_connectedClientsMap;
 
 
 /**
@@ -23,6 +24,13 @@ BLEClient* BLEDevice::m_pClient = nullptr;
  */
 /* STATIC */ BLEClient* BLEDevice::createClient() {
 	m_pClient = new BLEClient();
+	
+//**************初始化clinet*********************
+// client_init(1);
+
+//***************注册clint回调函数*****************
+//   _basClientId = bas_add_client(clientCallbackDefault, max_link_num);
+
 	return m_pClient;
 } // createClient
 
@@ -88,4 +96,47 @@ BLEClient* BLEDevice::m_pClient = nullptr;
 #endif
 	return ret;
 } // gapEventHandler
+
+
+/**
+ * @brief Handle GATT client events.
+ *
+ * Handler for the GATT client events.
+ *
+ * @param [in] event
+ * @param [in] gattc_if
+ * @param [in] param
+ */
+/* STATIC */ void BLEDevice::gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data) {
+
+	for(auto &myPair : BLEDevice::getPeerDevices(true)) {
+		conn_status_t conn_status = (conn_status_t)myPair.second;
+		if(((BLEClient*)conn_status.peer_device)->getGattcIf() == client_id || ((BLEClient*)conn_status.peer_device)->getGattcIf() == 0xff || client_id == 0xff){
+			((BLEClient*)conn_status.peer_device)->clientCallbackDefault(client_id,conn_id,  p_data);
+		}
+	}
+	
+#if 0
+	if(m_customGattcHandler != nullptr) {
+		m_customGattcHandler(event, gattc_if, param);
+	}
+#endif 
+
+} // gattClientEventHandler
+
+/* multi connect support */
+/* requires a little more work */
+std::map<uint16_t, conn_status_t> BLEDevice::getPeerDevices(bool _client) {
+	return m_connectedClientsMap;
+}
+
+void BLEDevice::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
+	conn_status_t status = {
+		.peer_device = peer,
+		.connected = true,
+		.mtu = 23
+	};
+
+	m_connectedClientsMap .insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
+}
 
