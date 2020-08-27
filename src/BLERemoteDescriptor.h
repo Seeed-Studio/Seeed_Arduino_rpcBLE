@@ -8,6 +8,7 @@
 #include "BLERemoteCharacteristic.h"
 #include "BLEUUID.h"
 #include "BLEFreeRTOS.h"
+#include "Seeed_erpcUnified.h"
 
 class BLEClient;
 class BLERemoteCharacteristic;
@@ -19,6 +20,11 @@ public:
     BLEUUID     getUUID();
 	uint16_t    getHandle();
 	std::string toString(void);
+	
+	BLERemoteCharacteristic* getRemoteCharacteristic();
+	void        writeValue(uint8_t* data, size_t length, bool response = false);
+	void        writeValue(std::string newValue, bool response = false);
+	void        writeValue(uint8_t newValue, bool response = false);
 
 
 private:
@@ -32,6 +38,8 @@ private:
 	uint16_t                 m_handle;                  // Server handle of this descriptor.
 	BLEUUID                  m_uuid;                    // UUID of this descriptor.
 	BLERemoteCharacteristic* m_pRemoteCharacteristic;   // 
+	
+	BLEFreeRTOS::Semaphore      m_semaphoreReadDescrEvt      = BLEFreeRTOS::Semaphore("ReadDescrEvt");
 
 };
 
