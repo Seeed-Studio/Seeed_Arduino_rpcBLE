@@ -133,6 +133,13 @@ const char* BLEUUID::str() {
     return _str;
 }
 
+
+BLEUUID::BLEUUID(uint16_t uuid) {
+	m_uuid.len         = 2;
+	m_uuid.uuid.uuid16 = uuid;
+	m_valueSet         = true;
+} // BLEUUID
+
 /**
  * @brief Compare a UUID against this UUID.
  *

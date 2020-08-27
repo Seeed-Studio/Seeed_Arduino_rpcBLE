@@ -33,6 +33,7 @@ class BLEUUID {
 public:
 	std::string    toString();
     BLEUUID();
+	BLEUUID(uint16_t uuid);
     BLEUUID(const char * str);      // Build a BLEUUID object from an UUID string. Use of hyphens (-) to seperate UUID sections in the string is acceptable.
     BLEUUID(uint8_t* data, uint8_t length);	
 	const char* str();
