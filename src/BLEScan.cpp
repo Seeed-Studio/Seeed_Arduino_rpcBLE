@@ -38,6 +38,8 @@ BLEScan::BLEScan() {
  */
 void updateScanParams() {
     Serial.printf("设置扫描参数...................");
+	uint16_t _scanInterval = 0x520;
+	le_scan_set_param(GAP_PARAM_SCAN_INTERVAL, sizeof(_scanInterval), &_scanInterval);
 }
 
 /**
@@ -46,7 +48,7 @@ void updateScanParams() {
  * @return The BLEScanResults.
  */
 BLEScanResults BLEScan::start(uint32_t duration, bool is_continue) {
-//	updateScanParams();	
+	updateScanParams();	
 	if(start(duration, nullptr, is_continue)) {
 //		m_semaphoreScanEnd.wait("start");   // Wait for the semaphore to release.
 	}
@@ -74,48 +76,15 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
 		}
 		m_scanResults.m_vectorAdvertisedDevices.clear();
 	}
-//    beginCentral(0);
-    uint32_t scanDuration_ms =  duration * 1000;
+	
+//    uint32_t scanDuration_ms =  duration * 1000;
 
-    start_Scan(scanDuration_ms);
+//    start_Scan(scanDuration_ms);
+    rpc_ble_start();
+	delay(1000);
 	return true;
 } // start
 
-void start_Scan(uint32_t scanDuration_ms) {
-#if 1	
-    start_Scan_1();
-    vTaskDelay(scanDuration_ms / portTICK_RATE_MS);
-    stopScan();
-    vTaskDelay(100 / portTICK_RATE_MS);
-#endif
-}
-
-void start_Scan_1() {
-    T_GAP_CAUSE cause;
-    if (BLEScan::_scanProcessing) {
-        Serial.printf("Scan is processing, please stop it first\n\r");
-    } else {
-        BLEScan::_scanProcessing = 1;
-		//启动扫描
-        cause = le_scan_start();
-        if (cause != GAP_CAUSE_SUCCESS) {
-            printf("Scan error\n\r");
-            BLEScan::_scanProcessing = 0;
-       }
-    }	
-}
-
-
-void stopScan() {
-    if (BLEScan::_scanProcessing) {
-		//停止扫描
-//        le_scan_stop();
-        le_scan_stop();
-        BLEScan::_scanProcessing = 0;
-    } else {
-       Serial.printf("There is no scan\n\r");
-    }
-}
 
 /**
  * @brief Stop an in progress scan.
