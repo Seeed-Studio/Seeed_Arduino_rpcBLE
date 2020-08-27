@@ -91,6 +91,22 @@ void BLERemoteService::removeCharacteristics() {
 	m_pClient->m_characteristicMapByHandle.clear();   // Clear the map
 } // removeCharacteristics
 
+T_APP_RESULT BLERemoteService::clientCallbackDefault(
+	T_CLIENT_ID client_id, uint8_t conn_id, void *p_data) {
+	T_APP_RESULT result = APP_RESULT_SUCCESS;
+    T_BLE_CLIENT_CB_DATA *p_ble_client_cb_data = (T_BLE_CLIENT_CB_DATA *)p_data;
+	switch (p_ble_client_cb_data->cb_type) {	
+		default:
+			break;
+	} // switch
+
+	// Send the event to each of the characteristics owned by this service.
+	for (auto &myPair : m_pClient->m_characteristicMapByHandle) {
+	   myPair.second->clientCallbackDefault(client_id,conn_id,p_data);
+	}
+	return result;
+} // gattClientEventHandler
+
 
 
 

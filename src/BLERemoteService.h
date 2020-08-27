@@ -45,7 +45,7 @@ private:
 	
 	BLEFreeRTOS::Semaphore m_semaphoregetchaEvt = BLEFreeRTOS::Semaphore("getCharacteristic");
 
-  	
+  	T_APP_RESULT   clientCallbackDefault(T_CLIENT_ID client_id, uint8_t conn_id, void *p_dat);
 }; // BLERemoteService
 
 #endif /* COMPONENTS_CPP_UTILS_BLEREMOTESERVICE_H_ */
