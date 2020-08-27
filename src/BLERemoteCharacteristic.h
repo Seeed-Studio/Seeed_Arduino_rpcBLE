@@ -15,7 +15,10 @@ class BLERemoteService;
 class BLERemoteCharacteristic {
 	BLEUUID     getUUID();
     uint16_t    getHandle();
+	uint16_t     getendHandle();
 	std::string toString();
+	
+	static BLERemoteCharacteristic*     _this;
 private:
     friend class BLEClient;
 	friend class BLERemoteService;
@@ -30,14 +33,20 @@ private:
     // Private properties
 	uint16_t             m_srvcId16;
 	BLEUUID              m_uuid;
-	uint16_t             m_charProp;
+	uint16_t             m_end_handle;
 //    esp_gatt_auth_req_t  m_auth;
 	uint16_t             m_handle;
 	BLERemoteService*    m_pRemoteService;
 	uint8_t 			 *m_rawData;
-//	notify_callback		 m_notifyCallback;
-//	std::string          toString();
 	
+	
+	BLERemoteService* getRemoteService();
+//	notify_callback		 m_notifyCallback;
+    void              retrieveDescriptors();
+	void              removeDescriptors();
+	bool              m_haveDescriptor;
+	
+	BLEFreeRTOS::Semaphore m_semaphoregetdescEvt = BLEFreeRTOS::Semaphore("getDescriptor");
 
 
 }; // BLERemoteCharacteristic

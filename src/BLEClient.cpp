@@ -229,8 +229,14 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
         case DISC_RESULT_CHAR_DESC_UUID16:
         {
             T_GATT_CHARACT_DESC_ELEM16 *disc_data = (T_GATT_CHARACT_DESC_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid16_disc_data);
-            
-            break;
+			
+			BLERemoteDescriptor* pNewRemoteDescriptor = new BLERemoteDescriptor(
+			disc_data->handle,
+			BLEUUID(disc_data->uuid16),
+			BLERemoteCharacteristic::_this
+		    );  
+		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
+			
         }
         case DISC_RESULT_CHAR_DESC_UUID128:
         {

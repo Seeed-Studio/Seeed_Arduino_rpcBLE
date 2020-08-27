@@ -15,6 +15,8 @@
 #include "BLEAddress.h"
 #include "BLEAdvertisedDevice.h"
 #include "BLERemoteService.h"
+
+#include "BLERemoteDescriptor.h"
 #include "Seeed_erpcUnified.h"
 
 
@@ -24,6 +26,7 @@ class BLERemoteService;
 class BLEClientCallbacks;
 class BLEAdvertisedDevice;
 class BLERemoteCharacteristic;
+class BLERemoteDescriptor;
 
 
 /**
@@ -47,6 +50,7 @@ public:
 	
 	std::map<std::string, BLERemoteCharacteristic*> m_characteristicMap;
 	std::map<uint16_t, BLERemoteCharacteristic*> m_characteristicMapByHandle;
+	std::map<std::string, BLERemoteDescriptor*> m_descriptorMap;
 	
 //	static BLEClient*     _this;
 	
@@ -55,6 +59,7 @@ private:
     friend class BLEDevice;
 	friend class BLERemoteService;
 	friend class BLERemoteCharacteristic;
+	friend class BLERemoteDescriptor;
 	
 	
 	T_APP_RESULT   clientCallbackDefault(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data);
