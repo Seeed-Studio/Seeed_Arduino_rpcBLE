@@ -26,12 +26,14 @@ public:
 	static uint16_t 	m_appId;
 	static void addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
 private:
+    friend class BLEClient;
     static BLEClient*	m_pClient;
     static BLEScan*	   _pBLEScan;
 	static std::map<uint16_t, conn_status_t> m_connectedClientsMap;
 	static T_APP_RESULT gapEventHandler(uint8_t cb_type, void *p_cb_data);
-    static void gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data );	
-	
+    static T_APP_RESULT gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data );	
+	static void ble_handle_gap_msg(T_IO_MSG *p_gap_msg);
+		
 };	
 
 #endif /* MAIN_BLEDevice_H_ */

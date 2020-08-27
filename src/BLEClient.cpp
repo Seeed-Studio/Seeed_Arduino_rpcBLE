@@ -12,33 +12,31 @@
 #include "BLEDevice.h"
 #include "BLEAdvertisedDevice.h"
 
-/*
- * Design
- * ------
- * When we perform a searchService() requests, we are asking the BLE server to return each of the services
- * that it exposes.  For each service, we received an ESP_GATTC_SEARCH_RES_EVT event which contains details
- * of the exposed service including its UUID.
- *
- * The objects we will invent for a BLEClient will be as follows:
- * * BLERemoteService - A model of a remote service.
- * * BLERemoteCharacteristic - A model of a remote characteristic
- * * BLERemoteDescriptor - A model of a remote descriptor.
- *
- * Since there is a hierarchical relationship here, we will have the idea that from a BLERemoteService will own
- * zero or more remote characteristics and a BLERemoteCharacteristic will own zero or more remote BLEDescriptors.
- *
- * We will assume that a BLERemoteService contains a map that maps BLEUUIDs to the set of owned characteristics
- * and that a BLECharacteristic contains a map that maps BLEUUIDs to the set of owned descriptors.
- *
- *
+BLEClient::BLEClient() {
+	m_pClientCallbacks = nullptr;
+	m_conn_id          = 0xff;
+	m_gattc_if         = 0xff;
+	m_haveServices     = false;
+	m_isConnected      = false;  // Initially, we are flagged as not connected.
+} // BLEClient
+
+
+/**
+ * @brief Destructor.
  */
-T_SERVER_ID BLEClient::_basClientId = 0;
+BLEClient::~BLEClient() {
+	// We may have allocated service references associated with this client.  Before we are finished
+	// with the client, we must release resources.
+	for (auto &myPair : m_servicesMap) {
+	   delete myPair.second;
+	}
+	m_servicesMap.clear();
+} // ~BLEClient
+
+
 uint16_t BLEDevice::m_appId = 0; 
 
 
-BLEClient::BLEClient() {
-		m_gattc_if  =  0xff;
-} // BLEClient
 
 /**
  * @brief Set the callbacks that will be invoked.
@@ -67,120 +65,195 @@ bool BLEClient::connect(BLEAddress address, T_GAP_REMOTE_ADDR_TYPE type) {
 	
 	m_appId = BLEDevice::m_appId++;
 	BLEDevice::addPeerDevice(this, true, m_appId);
-	m_peerAddress = address;
-//连接到client
-#if 0
-	le_set_conn_param(GAP_CONN_PARAM_1M, &_connReqParam);
-    T_GAP_CAUSE result = le_connect(0, destAddr.data(), destAddrType, _localAddrType, scanTimeout);
-
-    if (result == GAP_CAUSE_SUCCESS) {
-        if (BTDEBUG) printf("Connect successful to %s\r\n", destAddr.str());
-        return true;
-    } else {
-        if (BTDEBUG) printf("Connect failed\r\n");
-        return false;
-    }
-#endif 
-
-#if 0
-    //*******************getConnid****************************
-	uint8_t connId = 0;
-	uint8_t* btAddr = targetDevice.getAddr().data();
+//******************************需要修改**************************************	
+	//m_peerAddress = address;
+	uint8_t bd_addr[6] = {0x7d, 0x18, 0x1b, 0xf1, 0xf7, 0x2c};
 	
-    if (le_get_conn_id(btAddr, addrType, &connId)) {
-        return connId;
-    } else {
-        return -1;
-    }
-#endif 
+//连接到client
+    T_GAP_LE_CONN_REQ_PARAM conn_req_param;
+	conn_req_param.scan_interval = 0x10;
+	conn_req_param.scan_window = 0x10;
+	conn_req_param.conn_interval_min = 80;
+	conn_req_param.conn_interval_max = 80;
+	conn_req_param.conn_latency = 0;
+	conn_req_param.supv_tout = 1000;
+	conn_req_param.ce_len_min = 2 * (conn_req_param.conn_interval_min - 1);
+	conn_req_param.ce_len_max = 2 * (conn_req_param.conn_interval_max - 1);
+
+	le_set_conn_param(GAP_CONN_PARAM_1M, &conn_req_param);
+
+
   //***********************真正实现连接****************
-  //  T_GAP_CONN_INFO connInfo;
-  //  le_get_conn_info(connId, pConnInfo);
+    T_GAP_CAUSE result = le_connect(0, bd_addr, GAP_REMOTE_ADDR_LE_PUBLIC, GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
+	delay(2000);
+	uint8_t conn_id = 0xff;
+	m_conn_id = le_get_conn_id(bd_addr, GAP_REMOTE_ADDR_LE_PUBLIC, &conn_id);
+	
 } // connect
 
 uint8_t BLEClient::getGattcIf() {
 	return m_gattc_if;
 } // getGattcIf
 
+uint16_t BLEClient::getConnId() {
+	return m_conn_id;
+} // getConnId
+
+/**
+ * @brief Disconnect from the peer.
+ * @return N/A.
+ */
+void BLEClient::disconnect() {
+	le_disconnect(getConnId());
+} // disconnect
+
+
+/**
+ * @brief Get the service object corresponding to the uuid.
+ * @param [in] uuid The UUID of the service being sought.
+ * @return A reference to the Service or nullptr if don't know about it.
+ * @throws BLEUuidNotFound
+ */
+BLERemoteService* BLEClient::getService(BLEUUID uuid) {
+	if (!m_haveServices) {
+		getServices();
+	}
+	std::string uuidStr = uuid.toString();
+	for (auto &myPair : m_servicesMap) {
+		if (myPair.first == uuidStr) {
+			return myPair.second;
+		}
+	} // End of each of the services.
+	return nullptr;
+} // getService
+
+/**
+ * @brief Ask the remote %BLE server for its services.
+ * A %BLE Server exposes a set of services for its partners.  Here we ask the server for its set of
+ * services and wait until we have received them all.
+ * @return N/A
+ */
+std::map<std::string, BLERemoteService*>* BLEClient::getServices() {
+
+    clearServices(); // Clear any services that may exist.
+	client_all_primary_srv_discovery(getConnId(),getGattcIf());
+	 
+	m_semaphoreSearchCmplEvt.take("getServices");
+	// If sucessfull, remember that we now have services.
+	m_haveServices = (m_semaphoreSearchCmplEvt.wait("getServices") == 0);
+    m_haveServices = true;
+	return &m_servicesMap;
+} // getServices
+
+/**
+ * @brief Clear any existing services.
+ *
+ */
+void BLEClient::clearServices() {
+	// Delete all the services.
+	for (auto &myPair : m_servicesMap) {
+	   delete myPair.second;
+	}
+	m_servicesMap.clear();
+	m_haveServices = false;
+} // clearServices
+
 
 T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data) {
-    T_APP_RESULT app_result = APP_RESULT_SUCCESS;
-#if 0
-    if (client_id == _basClientId) {
-        T_BAS_CLIENT_CB_DATA *p_bas_cb_data = (T_BAS_CLIENT_CB_DATA *)p_data;
-        switch (p_bas_cb_data->cb_type) {
-            
-            case BAS_CLIENT_CB_TYPE_DISC_STATE: {
-                switch (p_bas_cb_data->cb_content.disc_state) {
-                    case DISC_BAS_FAILED: {
-                        if (BTDEBUG) printf("Battery service not found on connection %d device\r\n", conn_id);
-                        _basServiceAvaliable[conn_id] = 0;
-                        break;
-                    }
-                    case DISC_BAS_DONE: {
-                        if (BTDEBUG) printf("Battery service found on connection %d device\r\n", conn_id);
-                        _basServiceAvaliable[conn_id] = 1;
-                        break;
-                    }
-                    default:
-                        break;
-                }
-                if (_pDiscoveryCB != nullptr) {
-                    _pDiscoveryCB(conn_id, _basServiceAvaliable[conn_id]);
-                }
-                break;
-            }
-            
-            case BAS_CLIENT_CB_TYPE_READ_RESULT: {
-                switch (p_bas_cb_da      ta->cb_content.read_result.type) {
-                    case BAS_READ_NOTIFY: {
-                        if (BTDEBUG) printf("Read result connection %d device notification state %d\r\n", conn_id, p_bas_cb_data->cb_content.read_result.data.notify);
-                        _basNotificationEnabled[conn_id] = p_bas_cb_data->cb_content.read_result.data.notify;
-                        break;
-                    }
-                    case BAS_READ_BATTERY_LEVEL: {
-                        if (BTDEBUG) printf("Read result connection %d device battery level %d\r\n", conn_id, p_bas_cb_data->cb_content.read_result.data.battery_level);
-                        _battLevel[conn_id] = p_bas_cb_data->cb_content.read_result.data.battery_level;
-                        if (_pReadCB != nullptr) {
-                            _pReadCB(conn_id, _battLevel[conn_id]);
-                        }
-                        break;
-                    }
-                }
-                break;
-            }
-            
-            case BAS_CLIENT_CB_TYPE_WRITE_RESULT: {
-                switch (p_bas_cb_data->cb_content.write_result.type) {
-                    case BAS_WRITE_NOTIFY_ENABLE: {
-                        if (BTDEBUG) printf("Write result connection %d device notification enabled\r\n", conn_id);
-                        _basNotificationEnabled[conn_id] = 1;
-                        break;
-                    }
-                    case BAS_WRITE_NOTIFY_DISABLE: {
-                        if (BTDEBUG) printf("Write result connection %d device notification disabled\r\n", conn_id);
-                        _basNotificationEnabled[conn_id] = 0;
-                        break;
-                    }
-                }
-                break;
-            }
-            
-            case BAS_CLIENT_CB_TYPE_NOTIF_IND_RESULT: {
-                if (BTDEBUG) printf("Received notification connection %d device battery level %d\r\n", conn_id, p_bas_cb_data->cb_content.notify_data.battery_level);
-                _battLevel[conn_id] = p_bas_cb_data->cb_content.notify_data.battery_level;
-                if (_pNotificationCB != nullptr) {
-                    _pNotificationCB(conn_id, _battLevel[conn_id]);
-                }
-                break;
-            }
-            
-            default:
-                if (BTDEBUG) printf("Unhandled callback type\r\n");
-                break;
+ 
+	T_APP_RESULT result = APP_RESULT_SUCCESS;
+    T_BLE_CLIENT_CB_DATA *p_ble_client_cb_data = (T_BLE_CLIENT_CB_DATA *)p_data;
+	
+    switch (p_ble_client_cb_data->cb_type)
+    {
+    case BLE_CLIENT_CB_TYPE_DISCOVERY_STATE:
+        Serial.printf("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
+        break;
+    case BLE_CLIENT_CB_TYPE_DISCOVERY_RESULT:
+    {
+		T_DISCOVERY_RESULT_TYPE discov_type = p_ble_client_cb_data->cb_content.discov_result.discov_type;
+        switch (discov_type)
+        {
+            Serial.printf("discov_type:%d\n\r", discov_type);
+        case DISC_RESULT_ALL_SRV_UUID16:
+        {
+            T_GATT_SERVICE_ELEM16 *disc_data = (T_GATT_SERVICE_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_uuid16_disc_data);
+			
+			BLEUUID uuid = BLEUUID(disc_data->uuid16);
+			BLERemoteService* pRemoteService = new BLERemoteService( 
+			disc_data->att_handle,
+            disc_data->end_group_handle,
+			disc_data->uuid16,
+			this
+			);
+
+			m_servicesMap.insert(std::pair<std::string, BLERemoteService*>(uuid.toString(), pRemoteService));      
+            break;
         }
+        case DISC_RESULT_ALL_SRV_UUID128:
+        {
+            T_GATT_SERVICE_ELEM128 *disc_data = (T_GATT_SERVICE_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_uuid128_disc_data);
+     
+            break;
+        }
+        case DISC_RESULT_SRV_DATA:
+        {
+            T_GATT_SERVICE_BY_UUID_ELEM *disc_data = (T_GATT_SERVICE_BY_UUID_ELEM *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_disc_data);
+            Serial.printf("start_handle:%d, end handle:%d\n\r", disc_data->att_handle, disc_data->end_group_handle);
+            break;
+        }
+        case DISC_RESULT_CHAR_UUID16:
+        {
+            T_GATT_CHARACT_ELEM16 *disc_data = (T_GATT_CHARACT_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid16_disc_data);
+			
+			BLEUUID uuid = BLEUUID(disc_data->uuid16);
+			BLERemoteCharacteristic *pNewRemoteCharacteristic = new BLERemoteCharacteristic(
+		    disc_data->decl_handle,
+			disc_data->properties,
+			disc_data->value_handle,
+			disc_data->uuid16,
+			BLERemoteService::_this
+		    ); 
+			
+            m_characteristicMap.insert(std::pair<std::string, BLERemoteCharacteristic*>(pNewRemoteCharacteristic->getUUID().toString(), pNewRemoteCharacteristic));
+		    m_characteristicMapByHandle.insert(std::pair<uint16_t, BLERemoteCharacteristic*>(disc_data->decl_handle, pNewRemoteCharacteristic));					
+           
+            break;
+        }
+        case DISC_RESULT_CHAR_UUID128:
+        {
+            T_GATT_CHARACT_ELEM128 *disc_data = (T_GATT_CHARACT_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid128_disc_data);
+           
+            break;
+        }
+        case DISC_RESULT_CHAR_DESC_UUID16:
+        {
+            T_GATT_CHARACT_DESC_ELEM16 *disc_data = (T_GATT_CHARACT_DESC_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid16_disc_data);
+            
+            break;
+        }
+        case DISC_RESULT_CHAR_DESC_UUID128:
+        {
+            T_GATT_CHARACT_DESC_ELEM128 *disc_data = (T_GATT_CHARACT_DESC_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid128_disc_data);
+            break;
+        }
+        default:
+            break;
+        }
+       
     }
-#endif
-    return app_result;
+    case BLE_CLIENT_CB_TYPE_READ_RESULT:
+        break;
+    case BLE_CLIENT_CB_TYPE_WRITE_RESULT:
+        break;
+    case BLE_CLIENT_CB_TYPE_NOTIF_IND:
+        break;
+    case BLE_CLIENT_CB_TYPE_DISCONNECT_RESULT:
+        break;
+    default:
+        break;
+    }
+	
+    return result;
  
 }
