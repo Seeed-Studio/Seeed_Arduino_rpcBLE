@@ -80,7 +80,7 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
 //    uint32_t scanDuration_ms =  duration * 1000;
 
 //    start_Scan(scanDuration_ms);
-    rpc_ble_start();
+     le_scan_start();
 	delay(1000);
 	return true;
 } // start
