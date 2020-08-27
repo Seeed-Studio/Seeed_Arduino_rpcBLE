@@ -157,6 +157,8 @@ std::map<std::string, BLERemoteService*>* BLEClient::getServices() {
 	// If sucessfull, remember that we now have services.
 	m_haveServices = (m_semaphoreSearchCmplEvt.wait("getServices") == 0);
     m_haveServices = true;
+
+	
 	return &m_servicesMap;
 } // getServices
 
@@ -183,6 +185,8 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
     {
     case BLE_CLIENT_CB_TYPE_DISCOVERY_STATE:
         Serial.printf("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
+		//give se
+		m_semaphoreSearchCmplEvt.give(0);
         break;
     case BLE_CLIENT_CB_TYPE_DISCOVERY_RESULT:
     {
