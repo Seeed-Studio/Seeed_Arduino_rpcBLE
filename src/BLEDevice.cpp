@@ -72,8 +72,9 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:cl
 	 *
 	 */
 	rpc_ble_init();
-//	rpc_gap_config_max_le_link_num(3);
-//	rpc_le_gap_init(3);
+	//rpc_gap_config_max_le_link_num(3);
+	//pc_le_gap_init(3);
+	//ble_client_init(BLE_CLIENT_MAX_APPS);
 
 	le_register_app_cb(gapEventHandler);
     le_register_msg_handler(ble_handle_gap_msg);
