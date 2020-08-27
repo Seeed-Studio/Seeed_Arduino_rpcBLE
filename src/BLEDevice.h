@@ -14,7 +14,7 @@
 #include "BLEScan.h"
 #include "FreeRTOS.h"
 #include "BLEClient.h"
-#define BTDEBUG 1
+#define BTDEBUG 0
 typedef uint8_t T_CLIENT_ID;
 
 class BLEDevice {
