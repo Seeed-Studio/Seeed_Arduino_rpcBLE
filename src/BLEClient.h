@@ -43,6 +43,8 @@ public:
 	void             setClientCallbacks(BLEClientCallbacks *pClientCallbacks);
 	BLEAddress       m_peerAddress = BLEAddress((uint8_t*)"\0\0\0\0\0\0");   // The BD address of the remote server.
 	
+	bool                                       isConnected();      
+	
 	uint8_t                                    getGattcIf();
 	uint16_t                                   getConnId();
 	std::map<std::string, BLERemoteService*>*  getServices(); 
@@ -63,6 +65,8 @@ private:
 	
 	
 	T_APP_RESULT   clientCallbackDefault(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data);
+	
+	
     
 //	static T_CLIENT_ID    _basClientId;
 	

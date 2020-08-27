@@ -67,7 +67,7 @@ bool BLEClient::connect(BLEAddress address, T_GAP_REMOTE_ADDR_TYPE type) {
 	BLEDevice::addPeerDevice(this, true, m_appId);
 //******************************需要修改**************************************	
 	//m_peerAddress = address;
-	uint8_t bd_addr[6] = {0x7d, 0x18, 0x1b, 0xf1, 0xf7, 0x2c};
+	//uint8_t bd_addr[6] = {0x7d, 0x18, 0x1b, 0xf1, 0xf7, 0x2c};
 	
 //连接到client
     T_GAP_LE_CONN_REQ_PARAM conn_req_param;
@@ -84,10 +84,16 @@ bool BLEClient::connect(BLEAddress address, T_GAP_REMOTE_ADDR_TYPE type) {
 
 
   //***********************真正实现连接****************
-    T_GAP_CAUSE result = le_connect(0, bd_addr, GAP_REMOTE_ADDR_LE_PUBLIC, GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
+    T_GAP_CAUSE result = le_connect(0, (uint8_t *)address.getNative(), type, GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
+	if (result == GAP_CAUSE_SUCCESS)
+	{
+		m_isConnected = true;
+	}
 	delay(2000);
 	uint8_t conn_id = 0xff;
-	m_conn_id = le_get_conn_id(bd_addr, GAP_REMOTE_ADDR_LE_PUBLIC, &conn_id);
+	le_get_conn_id((uint8_t *)address.getNative(), GAP_REMOTE_ADDR_LE_PUBLIC, &conn_id);
+	m_conn_id = conn_id;
+	
 	
 } // connect
 
@@ -106,6 +112,15 @@ uint16_t BLEClient::getConnId() {
 void BLEClient::disconnect() {
 	le_disconnect(getConnId());
 } // disconnect
+
+/**
+ * @brief Are we connected to a partner?
+ * @return True if we are connected and false if we are not connected.
+ */
+bool BLEClient::isConnected() {
+	return m_isConnected;
+} // isConnected
+
 
 
 /**
@@ -236,7 +251,7 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
 			BLERemoteCharacteristic::_this
 		    );  
 		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
-			
+			break;
         }
         case DISC_RESULT_CHAR_DESC_UUID128:
         {
@@ -260,6 +275,10 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
         break;
     }
 	
+	// Pass the request on to all services.
+	for (auto &myPair : m_servicesMap) {
+	   myPair.second->clientCallbackDefault(client_id,conn_id,p_data);
+	}
     return result;
  
 }
