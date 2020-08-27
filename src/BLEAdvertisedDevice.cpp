@@ -48,10 +48,19 @@ T_GAP_REMOTE_ADDR_TYPE BLEAdvertisedDevice::getAddressType() {
  * @return Return true if service is advertised
  */
 bool BLEAdvertisedDevice::isAdvertisingService(BLEUUID uuid){
+	Serial.printf("isAdvertisingService: size %d\n\r", m_serviceUUIDs.size());
+	for (int i = 0; i < m_serviceUUIDs.size(); i++) {
+		if (m_serviceUUIDs[i].equals(uuid)) return true;
+	}
+	return false;
+
+#if 0	
 	for (int i = 0; i < 7; i++) {
 		if (_serviceList[i].equals(uuid)) return true;
 	}
 	return false;
+#endif
+    
 }
 
 
@@ -78,6 +87,7 @@ BLEUUID BLEAdvertisedDevice::getServiceUUID(int i) {
  * @param [in] serviceUUID The discovered serviceUUID
  */
 void BLEAdvertisedDevice::setServiceUUID(BLEUUID serviceUUID) {
+	m_serviceUUIDs.push_back(serviceUUID);
 	m_haveServiceUUID = true;
 } // setServiceUUID
 
@@ -87,6 +97,7 @@ void BLEAdvertisedDevice::setServiceUUID(BLEUUID serviceUUID) {
  * @return True if there is a service UUID value present.
  */
 bool BLEAdvertisedDevice::haveServiceUUID() {
+	Serial.printf("haveServiceUUID :%d\n\r", m_haveServiceUUID);
 	return m_haveServiceUUID;
 } // haveServiceUUID
 
@@ -210,7 +221,7 @@ void BLEAdvertisedDevice::setAddressType(T_GAP_REMOTE_ADDR_TYPE type) {
 }
 
 void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
-	
+	Serial.printf("Entry parseAdvertisement\n\r");
     T_LE_SCAN_INFO *scan_info = p_data->p_le_scan_info;
     clear();
 
@@ -226,7 +237,12 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
 
     uint8_t buffer[32];
     uint8_t pos = 0;
-
+	Serial.printf("scan_info data:\n\r");
+	for(int i = 0; i < scan_info->data_len; i++)
+	{
+		Serial.printf("%02x, ", scan_info->data[i]);
+	}
+	Serial.printf("\n\r");
     while (pos < scan_info->data_len) {
         // Length of the AD structure.
         uint8_t length = scan_info->data[pos++];    // length of following data field = length of advert data field + 1 (adtype)
@@ -239,7 +255,7 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
             type = scan_info->data[pos];
 
 //            if (BTDEBUG) printf("parseScanInfo: AD Structure Info: AD type 0x%x, AD Data Length %d\r\n", type, (length - 1));
-
+			Serial.printf("type: %d\n\r", type);
             switch (type) {
                 case GAP_ADTYPE_FLAGS: {
                     // (0x01) -- LE Limited Discoverable Mode
@@ -253,11 +269,13 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
 
                 case GAP_ADTYPE_16BIT_MORE:
                 case GAP_ADTYPE_16BIT_COMPLETE: {
+					Serial.printf("GAP_ADTYPE_16BIT_COMPLETE\n\r");
                     uint8_t *p_uuid = buffer;
                     uint8_t i = length - 1;
 
                     while (i >= 2) {
                         _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 2));
+						setServiceUUID(BLEUUID(p_uuid, 2));
                         p_uuid += 2;
                         i -= 2;
                     }
@@ -268,9 +286,10 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
                 case GAP_ADTYPE_32BIT_COMPLETE: {
                     uint8_t *p_uuid = buffer;
                     uint8_t i = length - 1;
-
+					Serial.printf("GAP_ADTYPE_32BIT_COMPLETE\n\r");
                     while (i >= 4) {
                         _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 4));
+						setServiceUUID(BLEUUID(p_uuid, 4));
                         p_uuid += 4;
                         i -= 4;
                     }
@@ -279,8 +298,10 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
 
                 case GAP_ADTYPE_128BIT_MORE:
                 case GAP_ADTYPE_128BIT_COMPLETE: {
+					Serial.printf("GAP_ADTYPE_128BIT_COMPLETE\n\r");
                     uint8_t *p_uuid = buffer;
                     _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 16));
+					setServiceUUID(BLEUUID(p_uuid, 16));
                     break;
                 }
 

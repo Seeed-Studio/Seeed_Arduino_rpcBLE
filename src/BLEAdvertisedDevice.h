@@ -93,6 +93,7 @@ private:
 	void setScan(BLEScan* pScan);
 	void setServiceUUID(BLEUUID serviceUUID);
 	T_GAP_REMOTE_ADDR_TYPE m_addressType;
+	
 };
 /**
  * @brief A callback handler for callbacks associated device scanning.
