@@ -1,0 +1,37 @@
+/*
+ * BLEUUID.h
+ *
+ *  Created on: Jun 21, 2017
+ *      Author: kolban
+ *  Modified on: Aug 28 2020
+ * 		Author: Hongtai Liu
+ * 		@bref: Adapt to rtl8720D
+ */
+
+#ifndef COMPONENTS_CPP_UTILS_BLEUUID_H_
+#define COMPONENTS_CPP_UTILS_BLEUUID_H_
+#include <string>
+#include "Seeed_erpcUnified.h"
+/**
+ * @brief A model of a %BLE UUID.
+ */
+class BLEUUID {
+public:
+	BLEUUID(std::string uuid);
+	BLEUUID(uint16_t uuid);
+	BLEUUID(rtl_bt_uuid_t uuid);
+	BLEUUID(uint8_t* pData, size_t size, bool msbFirst);
+	BLEUUID();
+	uint8_t        bitSize();   // Get the number of bits in this uuid.
+	bool           equals(BLEUUID uuid);
+	rtl_bt_uuid_t* getNative();
+	BLEUUID        to128();
+	std::string    toString();
+	static BLEUUID fromString(std::string uuid);  // Create a BLEUUID from a string
+
+private:
+	rtl_bt_uuid_t m_uuid;       		// The underlying UUID structure that this class wraps.
+	bool          m_valueSet = false;   // Is there a value set for this instance.
+}; // BLEUUID
+
+#endif /* COMPONENTS_CPP_UTILS_BLEUUID_H_ */
