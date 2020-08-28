@@ -37,6 +37,21 @@ BLEClient* BLERemoteService::getClient() {
 	return m_pClient;
 } // getClient
 
+uint16_t BLERemoteService::getStartHandle() {
+	return m_startHandle;
+} // getStartHandle
+
+uint16_t BLERemoteService::getHandle() {
+//	Serial.println(">> getHandle: service: %s", getUUID().toString().c_str());
+//	Serial.println("<< getHandle: %d 0x%.2x", getStartHandle(), getStartHandle());
+	return getStartHandle();
+} // getHandle
+
+
+BLEUUID BLERemoteService::getUUID() {
+	return m_uuid;
+}
+
 /**
  * @brief Get the characteristic object for the UUID.
  * @param [in] uuid Characteristic uuid.

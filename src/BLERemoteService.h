@@ -23,6 +23,9 @@ public:
 	BLEClient*               getClient(void);
 	
 	static BLERemoteService*     _this;
+	uint16_t                 getHandle();
+	BLEUUID                  getUUID(void);
+	
 	
 	
 private:
@@ -30,6 +33,7 @@ private:
    BLERemoteService(uint16_t att_handle, uint16_t end_group_handle, uint16_t uuid16, BLEClient* pClient);
 //   BLERemoteService(uint16_t att_handle,uint16_t end_group_handle,uint8_t uuid128[16],BLEClient* pClient);
 	
+	uint16_t            getStartHandle();
 
 	
     void            retrieveCharacteristics(void);
