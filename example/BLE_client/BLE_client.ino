@@ -11,17 +11,18 @@
 #include <BLEAdvertisedDevice.h>
 
 // The remote service we wish to connect to.
-static BLEUUID serviceUUID("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
+static BLEUUID serviceUUID(0x180F);
 // The characteristic of the remote service we are interested in.
-static BLEUUID    charUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+static BLEUUID    charUUID(0x2A19);
 
 static boolean doConnect = false;
 static boolean connected = false;
 static boolean doScan = false;
 static BLERemoteCharacteristic* pRemoteCharacteristic;
 static BLEAdvertisedDevice* myDevice;
+uint8_t bd_addr[6] = {0x7d, 0x18, 0x1b, 0xf1, 0xf7, 0x2c};
+BLEAddress BattServer(bd_addr);
 
-#if 0
 static void notifyCallback(
   BLERemoteCharacteristic* pBLERemoteCharacteristic,
   uint8_t* pData,
@@ -32,9 +33,9 @@ static void notifyCallback(
     Serial.print(" of data length ");
     Serial.println(length);
     Serial.print("data: ");
-    Serial.println((char*)pData);
+    Serial.print(*(uint8_t *)pData);
 }
-#endif 
+
 
 class MyClientCallback : public BLEClientCallbacks {
   void onConnect(BLEClient* pclient) {
@@ -63,6 +64,7 @@ bool connectToServer() {
 
     // Obtain a reference to the service we are after in the remote BLE server.
     BLERemoteService* pRemoteService = pClient->getService(serviceUUID);
+    Serial.println(serviceUUID.toString().c_str());
     if (pRemoteService == nullptr) {
       Serial.print("Failed to find our service UUID: ");
       Serial.println(serviceUUID.toString().c_str());
@@ -82,19 +84,19 @@ bool connectToServer() {
     }
     Serial.println(" - Found our characteristic");
 
-#if 0
+
     // Read the value of the characteristic.
     if(pRemoteCharacteristic->canRead()) {
+      Serial.println(" -  can  read  start");
       std::string value = pRemoteCharacteristic->readValue();
       Serial.print("The characteristic value was: ");
       Serial.println(value.c_str());
     }
-
+    
     if(pRemoteCharacteristic->canNotify())
       pRemoteCharacteristic->registerForNotify(notifyCallback);
 
     connected = true;
-#endif
     return true;
 }
 /**
@@ -107,12 +109,15 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
   void onResult(BLEAdvertisedDevice advertisedDevice) {
     Serial.print("BLE Advertised Device found: ");
     Serial.println(advertisedDevice.toString().c_str());
-	
+	  
     // We have found a device, let us now see if it contains the service we are looking for.
-    if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID)) {
-
+    if (memcmp(advertisedDevice.getAddress().getNative(),BattServer.getNative(), 6) == 0) {
+      Serial.print("BATT Device found: ");
+      Serial.println(advertisedDevice.toString().c_str());
       BLEDevice::getScan()->stop();
+      Serial.println("new BLEAdvertisedDevice");
       myDevice = new BLEAdvertisedDevice(advertisedDevice);
+      Serial.println("new BLEAdvertisedDevice done");
       doConnect = true;
       doScan = true;	
   } // onResult
@@ -122,6 +127,8 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
   Serial.begin(115200);
+  while(!Serial){};
+  delay(2000);
   Serial.println("Starting Arduino BLE Client application...");
   BLEDevice::init("");
 
@@ -151,4 +158,6 @@ void loop() {
     }
     doConnect = false;
   }
+  Serial.printf(".");
+  delay(1000);
 } // End of loop
