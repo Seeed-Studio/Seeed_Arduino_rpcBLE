@@ -24,6 +24,7 @@ public:
 	
 	static BLERemoteService*     _this;
 	uint16_t                 getHandle();
+	uint16_t                 getEndHandle();
 	BLEUUID                  getUUID(void);
 	
 	

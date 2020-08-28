@@ -37,6 +37,15 @@ BLEClient* BLERemoteService::getClient() {
 	return m_pClient;
 } // getClient
 
+/**
+ * @brief Get the client associated with this service.
+ * @return A reference to the client associated with this service.
+ */
+uint16_t BLERemoteService::getEndHandle() {
+	return m_endHandle;
+} // getClient
+
+
 uint16_t BLERemoteService::getStartHandle() {
 	return m_startHandle;
 } // getStartHandle
