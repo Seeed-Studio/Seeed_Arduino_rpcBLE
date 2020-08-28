@@ -3,12 +3,14 @@
  *
  *  Created on: Jul 2, 2017
  *      Author: kolban
+ * 
  *  Modified on: Aug 28 2020
- * 		Author: Hongtai Liu
- * 		@bref: Adapt to rtl8720D
+ * 		 Author: Hongtai Liu
+ * 		   bref: Adapt to rtl8720D
  */
-#define TAG "BLEAddress"
-#include "rpc_unified_log.h"
+
+#define TAG "BLEUUID"
+#include "BLELog.h"
 #include "BLEAddress.h"
 #include <string>
 #include <sstream>
@@ -17,12 +19,13 @@
 #include <stdio.h>
 #include <malloc.h>
 
+
 /**
  * @brief Create an address from the native ESP32 representation.
  * @param [in] address The native representation.
  */
-BLEAddress::BLEAddress(rtl_bd_addr_t address) {
-	memcpy(m_address, address, GAP_BD_ADDR_LEN);
+BLEAddress::BLEAddress(esp_bd_addr_t address) {
+	memcpy(m_address, address, ESP_BD_ADDR_LEN);
 } // BLEAddress
 
 
@@ -65,7 +68,7 @@ bool BLEAddress::equals(BLEAddress otherAddress) {
  * @brief Return the native representation of the address.
  * @return The native representation of the address.
  */
-rtl_bd_addr_t *BLEAddress::getNative() {
+esp_bd_addr_t *BLEAddress::getNative() {
 	return &m_address;
 } // getNative
 
@@ -89,4 +92,3 @@ std::string BLEAddress::toString() {
 	free(res);
 	return ret;
 } // toString
-

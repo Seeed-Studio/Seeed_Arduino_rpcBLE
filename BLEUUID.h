@@ -3,9 +3,10 @@
  *
  *  Created on: Jun 21, 2017
  *      Author: kolban
+ * 
  *  Modified on: Aug 28 2020
- * 		Author: Hongtai Liu
- * 		@bref: Adapt to rtl8720D
+ * 		 Author: Hongtai Liu
+ * 		   bref: Adapt to rtl8720D
  */
 
 #ifndef COMPONENTS_CPP_UTILS_BLEUUID_H_
@@ -19,18 +20,20 @@ class BLEUUID {
 public:
 	BLEUUID(std::string uuid);
 	BLEUUID(uint16_t uuid);
-	BLEUUID(rtl_bt_uuid_t uuid);
+	BLEUUID(uint32_t uuid);
+	BLEUUID(esp_bt_uuid_t uuid);
 	BLEUUID(uint8_t* pData, size_t size, bool msbFirst);
+	BLEUUID(esp_gatt_id_t gattId);
 	BLEUUID();
 	uint8_t        bitSize();   // Get the number of bits in this uuid.
 	bool           equals(BLEUUID uuid);
-	rtl_bt_uuid_t* getNative();
+	esp_bt_uuid_t* getNative();
 	BLEUUID        to128();
 	std::string    toString();
 	static BLEUUID fromString(std::string uuid);  // Create a BLEUUID from a string
 
 private:
-	rtl_bt_uuid_t m_uuid;       		// The underlying UUID structure that this class wraps.
+	esp_bt_uuid_t m_uuid;       		// The underlying UUID structure that this class wraps.
 	bool          m_valueSet = false;   // Is there a value set for this instance.
 }; // BLEUUID
 

@@ -3,12 +3,13 @@
  *
  *  Created on: Jun 21, 2017
  *      Author: kolban
+ * 
  *  Modified on: Aug 28 2020
- * 		Author: Hongtai Liu
- * 		@bref: Adapt to rtl8720D
+ * 		 Author: Hongtai Liu
+ * 		   bref: Adapt to rtl8720D
  */
 #define TAG "BLEUUID"
-#include "rpc_unified_log.h"
+#include "BLELog.h"
 #include <string.h>
 #include <sstream>
 #include <iomanip>
@@ -16,7 +17,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "BLEUUID.h"
-
 
 /**
  * @brief Copy memory from source to target but in reverse order.
@@ -69,7 +69,7 @@ static void memrcpy(uint8_t* target, uint8_t* source, uint32_t size) {
 BLEUUID::BLEUUID(std::string value) {
 	m_valueSet = true;
 	if (value.length() == 4) {
-		m_uuid.len         = UUID_16BIT_SIZE;
+		m_uuid.len         = ESP_UUID_LEN_16;
 		m_uuid.uuid.uuid16 = 0;
 		for(int i=0;i<value.length();){
 			uint8_t MSB = value.c_str()[i];
@@ -81,14 +81,27 @@ BLEUUID::BLEUUID(std::string value) {
 			i+=2;	
 		}
 	}
+	else if (value.length() == 8) {
+		m_uuid.len         = ESP_UUID_LEN_32;
+		m_uuid.uuid.uuid32 = 0;
+		for(int i=0;i<value.length();){
+			uint8_t MSB = value.c_str()[i];
+			uint8_t LSB = value.c_str()[i+1];
+			
+			if(MSB > '9') MSB -= 7; 
+			if(LSB > '9') LSB -= 7;
+			m_uuid.uuid.uuid32 += (((MSB&0x0F) <<4) | (LSB & 0x0F))<<(6-i)*4;
+			i+=2;
+		}		
+	}
 	else if (value.length() == 16) {  // how we can have 16 byte length string reprezenting 128 bit uuid??? needs to be investigated (lack of time)
-		m_uuid.len = UUID_128BIT_SIZE;
+		m_uuid.len = ESP_UUID_LEN_128;
 		memrcpy(m_uuid.uuid.uuid128, (uint8_t*)value.data(), 16);
 	}
 	else if (value.length() == 36) {
 		// If the length of the string is 36 bytes then we will assume it is a long hex string in
 		// UUID format.
-		m_uuid.len = UUID_128BIT_SIZE;
+		m_uuid.len = ESP_UUID_LEN_128;
 		int n = 0;
 		for(int i=0;i<value.length();){
 			if(value.c_str()[i] == '-')
@@ -121,7 +134,7 @@ BLEUUID::BLEUUID(uint8_t* pData, size_t size, bool msbFirst) {
 		log_e("ERROR: UUID length not 16 bytes");
 		return;
 	}
-	m_uuid.len = UUID_128BIT_SIZE;
+	m_uuid.len = ESP_UUID_LEN_128;
 	if (msbFirst) {
 		memrcpy(m_uuid.uuid.uuid128, pData, 16);
 	} else {
@@ -137,8 +150,20 @@ BLEUUID::BLEUUID(uint8_t* pData, size_t size, bool msbFirst) {
  * @param [in] uuid The 16bit short form UUID.
  */
 BLEUUID::BLEUUID(uint16_t uuid) {
-	m_uuid.len         = UUID_16BIT_SIZE;
+	m_uuid.len         = ESP_UUID_LEN_16;
 	m_uuid.uuid.uuid16 = uuid;
+	m_valueSet         = true;
+} // BLEUUID
+
+
+/**
+ * @brief Create a UUID from the 32bit value.
+ *
+ * @param [in] uuid The 32bit short form UUID.
+ */
+BLEUUID::BLEUUID(uint32_t uuid) {
+	m_uuid.len         = ESP_UUID_LEN_32;
+	m_uuid.uuid.uuid32 = uuid;
 	m_valueSet         = true;
 } // BLEUUID
 
@@ -148,9 +173,18 @@ BLEUUID::BLEUUID(uint16_t uuid) {
  *
  * @param [in] uuid The native UUID.
  */
-BLEUUID::BLEUUID(rtl_bt_uuid_t uuid) {
+BLEUUID::BLEUUID(esp_bt_uuid_t uuid) {
 	m_uuid     = uuid;
 	m_valueSet = true;
+} // BLEUUID
+
+
+/**
+ * @brief Create a UUID from the ESP32 esp_gat_id_t.
+ *
+ * @param [in] gattId The data to create the UUID from.
+ */
+BLEUUID::BLEUUID(esp_gatt_id_t gattId) : BLEUUID(gattId.uuid) {
 } // BLEUUID
 
 
@@ -166,9 +200,11 @@ BLEUUID::BLEUUID() {
 uint8_t BLEUUID::bitSize() {
 	if (!m_valueSet) return 0;
 	switch (m_uuid.len) {
-		case UUID_16BIT_SIZE:
+		case ESP_UUID_LEN_16:
 			return 16;
-		case UUID_128BIT_SIZE:
+		case ESP_UUID_LEN_32:
+			return 32;
+		case ESP_UUID_LEN_128:
 			return 128;
 		default:
 			log_e("Unknown UUID length: %d", m_uuid.len);
@@ -191,8 +227,12 @@ bool BLEUUID::equals(BLEUUID uuid) {
 		return uuid.toString() == toString();
 	}
 
-	if (uuid.m_uuid.len == UUID_16BIT_SIZE) {
+	if (uuid.m_uuid.len == ESP_UUID_LEN_16) {
 		return uuid.m_uuid.uuid.uuid16 == m_uuid.uuid.uuid16;
+	}
+
+	if (uuid.m_uuid.len == ESP_UUID_LEN_32) {
+		return uuid.m_uuid.uuid.uuid32 == m_uuid.uuid.uuid32;
 	}
 
 	return memcmp(uuid.m_uuid.uuid.uuid128, m_uuid.uuid.uuid128, 16) == 0;
@@ -233,7 +273,7 @@ BLEUUID BLEUUID::fromString(std::string _uuid) {
  *
  * @return The native UUID value or NULL if not set.
  */
-rtl_bt_uuid_t* BLEUUID::getNative() {
+esp_bt_uuid_t* BLEUUID::getNative() {
 	//log_d(">> getNative()")
 	if (m_valueSet == false) {
 		log_v("<< Return of un-initialized UUID!");
@@ -254,18 +294,25 @@ BLEUUID BLEUUID::to128() {
 	//log_v(">> toFull() - %s", toString().c_str());
 
 	// If we either don't have a value or are already a 128 bit UUID, nothing further to do.
-	if (!m_valueSet || m_uuid.len == UUID_128BIT_SIZE) {
+	if (!m_valueSet || m_uuid.len == ESP_UUID_LEN_128) {
 		return *this;
 	}
 
 	// If we are 16 bit or 32 bit, then set the 4 bytes of the variable part of the UUID.
-	if (m_uuid.len == UUID_16BIT_SIZE) {
+	if (m_uuid.len == ESP_UUID_LEN_16) {
 		uint16_t temp = m_uuid.uuid.uuid16;
 		m_uuid.uuid.uuid128[15] = 0;
 		m_uuid.uuid.uuid128[14] = 0;
 		m_uuid.uuid.uuid128[13] = (temp >> 8) & 0xff;
 		m_uuid.uuid.uuid128[12] = temp & 0xff;
 
+	}
+	else if (m_uuid.len == ESP_UUID_LEN_32) {
+		uint32_t temp = m_uuid.uuid.uuid32;
+		m_uuid.uuid.uuid128[15] = (temp >> 24) & 0xff;
+		m_uuid.uuid.uuid128[14] = (temp >> 16) & 0xff;
+		m_uuid.uuid.uuid128[13] = (temp >> 8) & 0xff;
+		m_uuid.uuid.uuid128[12] = temp & 0xff;
 	}
 
 	// Set the fixed parts of the UUID.
@@ -285,10 +332,13 @@ BLEUUID BLEUUID::to128() {
 	m_uuid.uuid.uuid128[1]  = 0x34;
 	m_uuid.uuid.uuid128[0]  = 0xfb;
 
-	m_uuid.len = UUID_128BIT_SIZE;
+	m_uuid.len = ESP_UUID_LEN_128;
 	//log_d("<< toFull <-  %s", toString().c_str());
 	return *this;
 } // to128
+
+
+
 
 /**
  * @brief Get a string representation of the UUID.
@@ -304,11 +354,17 @@ std::string BLEUUID::toString() {
 	if (!m_valueSet) return "<NULL>";   // If we have no value, nothing to format.
 	// If the UUIDs are 16 or 32 bit, pad correctly.
 
-	if (m_uuid.len == UUID_16BIT_SIZE) {  // If the UUID is 16bit, pad correctly.
+	if (m_uuid.len == ESP_UUID_LEN_16) {  // If the UUID is 16bit, pad correctly.
 		char hex[9];
 		snprintf(hex, sizeof(hex), "%08x", m_uuid.uuid.uuid16);
 		return std::string(hex) + "-0000-1000-8000-00805f9b34fb";
 	} // End 16bit UUID
+
+	if (m_uuid.len == ESP_UUID_LEN_32) {  // If the UUID is 32bit, pad correctly.
+		char hex[9];
+		snprintf(hex, sizeof(hex), "%08x", m_uuid.uuid.uuid32);
+		return std::string(hex) + "-0000-1000-8000-00805f9b34fb";
+	} // End 32bit UUID
 
 	// The UUID is not 16bit or 32bit which means that it is 128bit.
 	//

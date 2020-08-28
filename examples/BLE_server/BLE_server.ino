@@ -11,7 +11,7 @@ void setup()
 
     //Test BLEUUID
     Serial.println("Testing BLEUUID...");
-    BLEUUID UUID16(0x180F);
+    BLEUUID UUID16((uint16_t)0x180F);
     Serial.print("UUID16: ");
     Serial.println(UUID16.toString().c_str());
     BLEUUID UUID128("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
