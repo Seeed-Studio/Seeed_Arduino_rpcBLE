@@ -134,11 +134,14 @@ BLERemoteService* BLEClient::getService(BLEUUID uuid) {
 		getServices();
 	}
 	std::string uuidStr = uuid.toString();
+	
 	for (auto &myPair : m_servicesMap) {
 		if (myPair.first == uuidStr) {
 			return myPair.second;
 		}
 	} // End of each of the services.
+	
+	Serial.print("end  BLEClient::getServices():\n\r "); 
 	return nullptr;
 } // getService
 
@@ -152,12 +155,11 @@ std::map<std::string, BLERemoteService*>* BLEClient::getServices() {
 
     clearServices(); // Clear any services that may exist.
 	client_all_primary_srv_discovery(getConnId(),getGattcIf());
-	 
+	Serial.print("start  BLEClient::getServices():\n\r "); 
 	m_semaphoreSearchCmplEvt.take("getServices");
 	// If sucessfull, remember that we now have services.
 	m_haveServices = (m_semaphoreSearchCmplEvt.wait("getServices") == 0);
     m_haveServices = true;
-
 	
 	return &m_servicesMap;
 } // getServices
@@ -184,10 +186,28 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
     switch (p_ble_client_cb_data->cb_type)
     {
     case BLE_CLIENT_CB_TYPE_DISCOVERY_STATE:
+	{
         Serial.printf("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
 		//give se
-		m_semaphoreSearchCmplEvt.give(0);
+		T_DISCOVERY_STATE state = p_ble_client_cb_data->cb_content.discov_state.state;
+		switch(state)
+		{
+			case DISC_STATE_SRV_DONE:
+			{
+			m_semaphoreSearchCmplEvt.give(0); 
+			Serial.printf("m_semaphoreSearchCmplEvt.give(0)\n\r");
+			break;
+			}
+			case DISC_STATE_CHAR_DONE:
+			{
+			BLERemoteService::_this->m_semaphoregetchaEvt.give(0);
+			Serial.printf("m_semaphoregetchaEvt");
+			break;
+			}				
+		}
+		
         break;
+	}
     case BLE_CLIENT_CB_TYPE_DISCOVERY_RESULT:
     {
 		T_DISCOVERY_RESULT_TYPE discov_type = p_ble_client_cb_data->cb_content.discov_result.discov_type;
@@ -195,7 +215,7 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
         {
             Serial.printf("discov_type:%d\n\r", discov_type);
         case DISC_RESULT_ALL_SRV_UUID16:
-        {
+        {   
             T_GATT_SERVICE_ELEM16 *disc_data = (T_GATT_SERVICE_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_uuid16_disc_data);
 			
 			BLEUUID uuid = BLEUUID(disc_data->uuid16);
@@ -205,9 +225,14 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
 			disc_data->uuid16,
 			this
 			);
-
-			m_servicesMap.insert(std::pair<std::string, BLERemoteService*>(uuid.toString(), pRemoteService));      
-            break;
+			
+			Serial.println(pRemoteService->getUUID().toString().c_str());
+			
+            Serial.print("m_servicesMap.insert start16:\n\r "); 
+			m_servicesMap.insert(std::pair<std::string, BLERemoteService*>(uuid.toString(), pRemoteService));			
+            Serial.print("m_servicesMap.insert end16:\n\r ");           			
+				
+			break;
         }
         case DISC_RESULT_ALL_SRV_UUID128:
         {
