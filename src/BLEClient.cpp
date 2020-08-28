@@ -203,7 +203,13 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
 			BLERemoteService::_this->m_semaphoregetchaEvt.give(0);
 			Serial.printf("m_semaphoregetchaEvt");
 			break;
-			}				
+			}		
+            case DISC_STATE_CHAR_DESCRIPTOR_DONE:
+			{
+			BLERemoteCharacteristic::_this->m_semaphoregetdescEvt.give(0);
+			Serial.printf("m_semaphoregetchaEvt");
+			break;
+			}					
 		}
 		
         break;
@@ -279,7 +285,10 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
 			BLEUUID(disc_data->uuid16),
 			BLERemoteCharacteristic::_this
 		    );  
+			Serial.println(pNewRemoteDescriptor->getUUID().toString().c_str());
+			Serial.print("m_descriptorMap.insert start\n\r ");
 		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
+			Serial.print("m_descriptorMap.insert end\n\r ");
 			break;
         }
         case DISC_RESULT_CHAR_DESC_UUID128:
