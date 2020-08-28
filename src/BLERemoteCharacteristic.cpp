@@ -17,15 +17,13 @@ BLERemoteCharacteristic::BLERemoteCharacteristic(
     uint16_t    uuid16,
 	BLERemoteService*    pRemoteService
     ) {
-	m_handle         = decl_handle;
+	m_handle         = value_handle;
 	m_srvcId16       = uuid16;
 	m_uuid           = BLEUUID(m_srvcId16);
-	m_end_handle      = value_handle;
+	m_end_handle      = pRemoteService->getEndHandle();
 	m_pRemoteService = pRemoteService;
 	m_notifyCallback = nullptr;
 	m_rawData = nullptr;
-
-	retrieveDescriptors(); // Get the descriptors for this characteristic
 } // BLERemoteCharacteristic
 
 /**
@@ -89,7 +87,8 @@ std::string BLERemoteCharacteristic::readValue() {
 	if (!getRemoteService()->getClient()->isConnected()) {
 		return std::string();
 	}
-
+    Serial.println("BLERemoteCharacteristic::readValue()\n\r");
+	
 	m_semaphoreReadCharEvt.take("readValue");
 
 /* 	
@@ -102,7 +101,7 @@ std::string BLERemoteCharacteristic::readValue() {
  */
     client_attr_read(m_pRemoteService->getClient()->getConnId(), m_pRemoteService->getClient()->getGattcIf(),getHandle());
 	
-
+    Serial.println("client_attr_read\n\r");
 	// Block waiting for the event that indicates that the read has completed.  When it has, the std::string found
 	// in m_value will contain our data.
 	m_semaphoreReadCharEvt.wait("readValue");
@@ -129,7 +128,10 @@ void BLERemoteCharacteristic::registerForNotify(notify_callback notifyCallback, 
 		uint8_t val[] = {0x01, 0x00};
 		if(!notifications) val[0] = 0x02;
 		BLERemoteDescriptor* desc = getDescriptor(BLEUUID((uint16_t)0x2902));
+		
+		Serial.println("client_attr_writeValue start\n\r");
 		desc->writeValue(val, 2);
+		Serial.println("client_attr_writeValue end\n\r");
 	} // End Register
 	else {   // If we weren't passed a callback function, then this is an unregistration.		
 		uint8_t val[] = {0x00, 0x00};
@@ -148,11 +150,14 @@ void BLERemoteCharacteristic::registerForNotify(notify_callback notifyCallback, 
  */
 BLERemoteDescriptor* BLERemoteCharacteristic::getDescriptor(BLEUUID uuid) {
 	std::string v = uuid.toString();
+	retrieveDescriptors();
 	for (auto &myPair : getRemoteService()->getClient()->m_descriptorMap) {
+		Serial.println("BLERemoteDescriptor not  found getDescriptor end\n\r");
 		if (myPair.first == v) {			
 			return myPair.second;
 		}
 	}
+	Serial.println("BLERemoteDescriptor* BLERemoteCharacteristic::getDescriptor end\n\r");
 	return nullptr;
 } // getDescriptor
 
@@ -160,6 +165,7 @@ void BLERemoteCharacteristic::writeValue(uint8_t newValue, bool response) {
 	writeValue(&newValue, 1, response);
 } // writeValue
 
+#if 0
 /**
  * @brief Write the new value for the characteristic.
  * @param [in] newValue The new value to write.
@@ -169,7 +175,7 @@ void BLERemoteCharacteristic::writeValue(uint8_t newValue, bool response) {
 void BLERemoteCharacteristic::writeValue(std::string newValue, bool response) {
 	writeValue((uint8_t*)newValue.c_str(), strlen(newValue.c_str()), response);
 } // writeValue
-
+#endif
 
 void BLERemoteCharacteristic::writeValue(uint8_t* data, size_t length, bool response) {
 
@@ -177,7 +183,7 @@ void BLERemoteCharacteristic::writeValue(uint8_t* data, size_t length, bool resp
 	if (!getRemoteService()->getClient()->isConnected()) {
 		return;
 	}
-
+    Serial.println("BLERemoteCharacteristic::writeValue entry\n\r");
 	m_semaphoreWriteCharEvt.take("writeValue");
 	// Invoke the ESP-IDF API to perform the write.
 	/* esp_err_t errRc = ::esp_ble_gattc_write_char(
@@ -191,7 +197,7 @@ void BLERemoteCharacteristic::writeValue(uint8_t* data, size_t length, bool resp
 	); */
 
 	client_attr_write(m_pRemoteService->getClient()->getConnId(),m_pRemoteService->getClient()->getGattcIf(),GATT_WRITE_TYPE_REQ,getHandle(),length,(uint8_t *)data);
-
+    Serial.println("BLERemoteCharacteristic::writeValue end\n\r");
 	m_semaphoreWriteCharEvt.wait("writeValue");
 } // writeValue
 
@@ -260,15 +266,30 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
         break;	
     }
     case BLE_CLIENT_CB_TYPE_READ_RESULT:
+	{   
+	    m_value = std::string((char*) p_ble_client_cb_data->cb_content.read_result.p_value,p_ble_client_cb_data->cb_content.read_result.value_size);
+		if(m_rawData != nullptr) free(m_rawData);
+		m_rawData = (uint8_t*) calloc(p_ble_client_cb_data->cb_content.read_result.value_size, sizeof(uint8_t));
+	    memcpy(m_rawData, p_ble_client_cb_data->cb_content.read_result.p_value , p_ble_client_cb_data->cb_content.read_result.value_size);
+		
+	    m_semaphoreReadCharEvt.give();
         break;
+	}
     case BLE_CLIENT_CB_TYPE_WRITE_RESULT:
+	{
+		m_semaphoreWriteCharEvt.give();
         break;
+	}
     case BLE_CLIENT_CB_TYPE_NOTIF_IND:{
 		if (p_ble_client_cb_data->cb_content.notif_ind.handle != getHandle()) break;
 		if (m_notifyCallback != nullptr) {
-				
+			
+			Serial.println("m_notifyCallback entry\n\r");	
+			
 			m_notifyCallback(this,p_ble_client_cb_data->cb_content.notif_ind.p_value, p_ble_client_cb_data->cb_content.notif_ind.value_size,p_ble_client_cb_data->cb_content.notif_ind.notify);
 		} // End we have a callback function ...
+		Serial.println("m_notifyCallback end\n\r");
+		m_semaphoreRegForNotifyEvt.give();
 		break;
 	}
 	

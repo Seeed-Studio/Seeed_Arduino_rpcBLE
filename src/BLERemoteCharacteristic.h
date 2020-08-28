@@ -28,7 +28,7 @@ public:
 	std::string readValue();
 	
 	void        writeValue(uint8_t* data, size_t length, bool response = false);
-	void        writeValue(std::string newValue, bool response = false);
+//	void        writeValue(std::string newValue, bool response = false);
 	void        writeValue(uint8_t newValue, bool response = false);
 	
 	BLERemoteDescriptor* getDescriptor(BLEUUID uuid);
