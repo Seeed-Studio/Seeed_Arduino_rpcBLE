@@ -42,7 +42,7 @@ public:
 	
 	bool        haveServiceUUID();
 	bool        haveTXPower();
-	bool        haveName();	
+	bool        haveName();
     bool        haveAppearance();
 	
 	void setAddressType(T_GAP_REMOTE_ADDR_TYPE type);
@@ -66,7 +66,7 @@ private:
 	
 	
 	
-	BLEAddress  m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");	
+	BLEAddress  m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
 	
 	uint8_t m_data[31] ={0}; // array for storing formatted advertising data for receiving and sending
     uint8_t m_dataSize = 0;

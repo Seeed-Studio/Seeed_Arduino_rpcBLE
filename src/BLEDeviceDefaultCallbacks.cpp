@@ -67,7 +67,6 @@ T_APP_RESULT BLEScan::gapCallbackDefault(uint8_t cb_type, void *p_cb_data) {
 			
 			advertisedDevice->setAddress(advertisedAddress);
 			advertisedDevice->setRSSI(p_data->p_le_scan_info->rssi);
-//			advertisedDevice->setAdFlag(param->scan_rst.flag);
 			advertisedDevice->parseAdvertisement(p_data);
 			advertisedDevice->setScan(this);
 			advertisedDevice->setAddressType(p_data->p_le_scan_info->remote_addr_type);
