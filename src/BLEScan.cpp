@@ -1,25 +1,16 @@
 /*
  * BLEScan.cpp
  *
- *  Created on: Jul 1, 2017
- *      Author: kolban
+ *  Created on: Jul 1, 2020
+ *      Author: coolc
  */
 
 
 #include <map>
 #include <Arduino.h>
-#include "BLEAdvertisedDevice.h"
 #include "BLEScan.h"
-#include "Seeed_erpcUnified.h"
 
 uint8_t BLEScan::_scanProcessing = 0;
-
-void beginCentral(uint8_t connCount);
-void start_Scan(uint32_t scanDuration_ms);
-void setupGAPBondManager();
-void start_Scan_1();
-void stopScan();
-
 
 
 /**
@@ -31,15 +22,63 @@ BLEScan::BLEScan() {
 } // BLEScan
 
 
+
 /**
- *
- *
- *
+ * @brief Should we perform an active or passive scan?
+ * The default is a passive scan.  An active scan means that we will wish a scan response.
+ * @param [in] active If true, we perform an active scan otherwise a passive scan.
+ * @return N/A.
  */
-void updateScanParams() {
-    Serial.printf("设置扫描参数...................");
-	uint16_t _scanInterval = 0x520;
+void BLEScan::setActiveScan(bool active) {
+	
+	if (active) {
+		
+		m_scanMode = GAP_SCAN_MODE_ACTIVE;
+		Serial.printf("setActiveScan ACTIVE...................");
+	} else {
+		m_scanMode = GAP_SCAN_MODE_PASSIVE;
+		Serial.printf("setActiveScan PASSIVE...................");
+	}
+    
+} // setActiveScan
+
+/**
+ * @brief Set the interval to scan.
+ * @param [in] The interval in msecs.
+ */
+void BLEScan::setInterval(uint16_t intervalMSecs) {
+	if ((intervalMSecs >= 3) && (intervalMSecs <= 10240)) {
+        m_scanInterval = (intervalMSecs*1000/625);
+    }
+} // setInterval
+
+
+/**
+ * @brief Set the window to actively scan.
+ * @param [in] windowMSecs How long to actively scan.
+ */
+void BLEScan::setWindow(uint16_t windowMSecs) {
+	if ((windowMSecs * 1000 / 625) > m_scanInterval) {
+        Serial.printf("Scan window should be less than or equal to scan interval\r\n");
+        return;
+    }
+    if ((windowMSecs >= 3) && (windowMSecs <= 10240)) {
+        m_scanWindow = (windowMSecs*1000/625);
+    }	
+} // setWindow
+
+
+/**
+ * Set scan parameters
+ */
+void BLEScan::updateScanParams() {
+    Serial.printf("Set scan parameters...................\r\n");
+    uint8_t  _scanMode = m_scanMode;
+    le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(_scanMode), &_scanMode);
+	uint16_t _scanInterval = m_scanInterval;
 	le_scan_set_param(GAP_PARAM_SCAN_INTERVAL, sizeof(_scanInterval), &_scanInterval);
+    uint16_t _scanWindow = m_scanWindow;
+    le_scan_set_param(GAP_PARAM_SCAN_WINDOW, sizeof(_scanWindow), &_scanWindow);
 }
 
 /**
@@ -50,7 +89,7 @@ void updateScanParams() {
 BLEScanResults BLEScan::start(uint32_t duration, bool is_continue) {
 	updateScanParams();	
 	if(start(duration, nullptr, is_continue)) {
-//		m_semaphoreScanEnd.wait("start");   // Wait for the semaphore to release.
+		m_semaphoreScanEnd.wait("start");   // Wait for the semaphore to release.
 	}
 	return m_scanResults;
 } // start
@@ -65,7 +104,7 @@ BLEScanResults BLEScan::start(uint32_t duration, bool is_continue) {
  * @return True if scan started or false if there was an error.
  */
 bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), bool is_continue) {
-//	m_semaphoreScanEnd.take(std::string("start"));
+	m_semaphoreScanEnd.take(std::string("start"));
 	m_scanCompleteCB = scanCompleteCB;                  // Save the callback to be invoked when the scan completes.
 
 	//  if we are connecting to devices that are advertising even after being connected, multiconnecting peripherals
@@ -77,12 +116,9 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
 		m_scanResults.m_vectorAdvertisedDevices.clear();
 	}
 	
-//    uint32_t scanDuration_ms =  duration * 1000;
-
-//    start_Scan(scanDuration_ms);
-     le_scan_start();
+    le_scan_start();
 	delay(1000);
-	return true;
+    return true;
 } // start
 
 
@@ -92,53 +128,9 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
  */
 void BLEScan::stop() {
     le_scan_stop();
+    m_semaphoreScanEnd.give();
+	Serial.printf("Level  BLEScan stop\n\r");
 } // stop
-
-
-
-/**
- * @brief Should we perform an active or passive scan?
- * The default is a passive scan.  An active scan means that we will wish a scan response.
- * @param [in] active If true, we perform an active scan otherwise a passive scan.
- * @return N/A.
- */
-void BLEScan::setActiveScan(bool active) {
-	
-	if (active) {
-		
-		//_scanMode = GAP_SCAN_MODE_ACTIVE;
-		Serial.printf("setActiveScan ACTIVE...................");
-	} else {
-		//_scanMode = GAP_SCAN_MODE_PASSIVE;
-		Serial.printf("setActiveScan PASSIVE...................");
-	}
-    
-} // setActiveScan
-
-/**
- * @brief Set the interval to scan.
- * @param [in] The interval in msecs.
- */
-void BLEScan::setInterval(uint16_t intervalMSecs) {
-	if ((intervalMSecs >= 3) && (intervalMSecs <= 10240)) {
-        _scanInterval = (intervalMSecs*1000/625);
-    }
-} // setInterval
-
-
-/**
- * @brief Set the window to actively scan.
- * @param [in] windowMSecs How long to actively scan.
- */
-void BLEScan::setWindow(uint16_t windowMSecs) {
-	if ((windowMSecs * 1000 / 625) > _scanInterval) {
-        Serial.printf("Scan window should be less than or equal to scan interval\r\n");
-        return;
-    }
-    if ((windowMSecs >= 3) && (windowMSecs <= 10240)) {
-        _scanWindow = (windowMSecs*1000/625);
-    }	
-} // setWindow
 
 
 
@@ -151,108 +143,6 @@ void BLEScan::setAdvertisedDeviceCallbacks(BLEAdvertisedDeviceCallbacks* pAdvert
 	m_wantDuplicates = wantDuplicates;
 	m_pAdvertisedDeviceCallbacks = pAdvertisedDeviceCallbacks;
 } // setAdvertisedDeviceCallbacks
-
-
-/**
- *starts the BLE stack to operate as a central device
- *note: central devices should not advertise to other devices
- *
- */
-static uint8_t _bleState;  // 0 = not running, 1 = peripheral, 2 = central
-void beginCentral(uint8_t connCount) {
-	//状态标志
-    //T_GAP_DEV_STATE new_state;
-    if (_bleState != 0) {
-        Serial.printf("BLE already running, unable to start central\r\n");
-        return;
-    } else {
-        _bleState = 2;
-    }
-    //// Config APP LE link number
-	Serial.printf("Config APP LE link number");
-#if 0
-    if (connCount <= BLE_CENTRAL_APP_MAX_LINKS) {
-        gap_config_max_le_link_num(connCount);
-        le_gap_init(connCount);
-    } else {
-        printf("Recommended max link count exceeded\r\n");
-    }
-#endif
-
-#if 0
-    ///set  phy
-    uint8_t  phys_prefer = GAP_PHYS_PREFER_ALL;
-    uint8_t  tx_phys_prefer = GAP_PHYS_PREFER_1M_BIT | GAP_PHYS_PREFER_2M_BIT | GAP_PHYS_PREFER_CODED_BIT;
-    uint8_t  rx_phys_prefer = GAP_PHYS_PREFER_1M_BIT | GAP_PHYS_PREFER_2M_BIT | GAP_PHYS_PREFER_CODED_BIT;
-    le_set_gap_param(GAP_PARAM_DEFAULT_PHYS_PREFER, sizeof(phys_prefer), &phys_prefer);
-    le_set_gap_param(GAP_PARAM_DEFAULT_TX_PHYS_PREFER, sizeof(tx_phys_prefer), &tx_phys_prefer);
-    le_set_gap_param(GAP_PARAM_DEFAULT_RX_PHYS_PREFER, sizeof(rx_phys_prefer), &rx_phys_prefer);
-#endif 
-
-#if 0
-    // update device parameters
-    le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN, _deviceName);
-    le_set_gap_param(GAP_PARAM_APPEARANCE, sizeof(_appearance), &_appearance);
-#endif
-
-#if 0
-    // update scan parameters
-    updateScanParams();
-    if (BTDEBUG) printf("Scan update\r\n");
-#endif
-
-    setupGAPBondManager();
-
-    // register callback to handle app GAP message
-#if 0	
-    le_register_app_cb(gapCallbackDefault);
-    if (BTDEBUG) printf("GAP cb reg\r\n");
-#endif
-
-#if 0
-    // register clients and callbacks
-    client_register_general_client_cb(appClientCallbackDefault);
-    //ble_central_gcs_client_id = gcs_add_client(ble_central_gcs_client_callback, BLE_CENTRAL_APP_MAX_LINKS, BLE_CENTRAL_APP_MAX_DISCOV_TABLE_NUM);
-#endif
-
-#if 0
-    // start BLE main task to handle IO and GAP msg
-    os_task_create(&_appTaskHandle, "BLE_Central_Task", BLEMainTask, 0, 256*6, 1);
-    if (BTDEBUG) printf("Task create\r\n");
-#endif
-
-#if 0
-    bt_coex_init();
-    if (BTDEBUG) printf("Coex init\r\n");
-#endif
-
-#if 0
-    /*Wait BT init complete*/
-    do {
-        vTaskDelay(100 / portTICK_RATE_MS);
-        le_get_gap_param(GAP_PARAM_DEV_STATE , &new_state);
-    }while(new_state.gap_init_state != GAP_INIT_STATE_STACK_READY);
-
-    /*Start BT WIFI coexistence*/
-    wifi_btcoex_set_bt_on();
-    if (BTDEBUG) printf("Coex on\r\n");
-#endif	
-}
-
-void setupGAPBondManager() {
-    // Setup the GAP Bond Manager
-	Serial.printf("Setup the GAP Bond Manager");
-#if 0	
-    gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(_authPairMode), &_authPairMode);
-    gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(_authFlags), &_authFlags);
-    gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(_authIoCap), &_authIoCap);
-    gap_set_param(GAP_PARAM_BOND_OOB_ENABLED, sizeof(_authOob), &_authOob);
-    le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY, sizeof(_authFixPasskey), &_authFixPasskey);
-    le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY_ENABLE, sizeof(_authUseFixPasskey), &_authUseFixPasskey);
-    le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_ENABLE, sizeof(_authSecReqEnable), &_authSecReqEnable);
-    le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_REQUIREMENT, sizeof(_authSecReqFlags), &_authSecReqFlags);
-#endif
-}
 
 
 /**

@@ -11,15 +11,12 @@
 // #include <vector>
 #include <string>
 #include "BLEAdvertisedDevice.h"
-#include "FreeRTOS.h"
+#include "BLEFreeRTOS.h"
 #include "Seeed_erpcUnified.h"
 
 class BLEScan;
 class BLEAdvertisedDeviceCallbacks;
 class BLEAdvertisedDevice;
-//void beginCentral(uint8_t connCount);
-//void start_Scan(uint32_t scanDuration_ms);
-//void setupGAPBondManager();
 
 /**
  * @brief The result of having performed a scan.
@@ -31,7 +28,6 @@ class BLEAdvertisedDevice;
 class BLEScanResults {
 public:
 	  int                 getCount();
-
 private:
 	friend BLEScan;
 	std::map<std::string, BLEAdvertisedDevice*> m_vectorAdvertisedDevices;
@@ -48,23 +44,27 @@ public:
 										bool wantDuplicates = false);
 	bool           start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), bool is_continue = false);
 	BLEScanResults start(uint32_t duration, bool is_continue = false);
-	void			clearResults();
-    static uint8_t                _scanProcessing;	
-	BLEScanResults                m_scanResults;
-    void           stop();
+	void		   clearResults();
+	void           stop();
+    static uint8_t                _scanProcessing;
+	
+    
 private:
     BLEScan();   // One doesn't create a new instance instead one asks the BLEDevice for the singleton.
 	friend class BLEDevice;
+
 	
-	bool                          m_wantDuplicates;
-	uint16_t _scanInterval = 0x40;              // Duration to wait between starting a scan. Value range: 0x0004 - 0x4000 (2.5ms - 10240ms)(0.625ms/step).
-	uint16_t _scanWindow = 0x30;                // Duration to continuously scan for after starting. Value range: 0x0004 - 0x4000 (2.5ms - 10240ms)(0.625ms/step).
-//	FreeRTOS::Semaphore           m_semaphoreScanEnd = FreeRTOS::Semaphore("ScanEnd");
-
-    T_APP_RESULT  gapCallbackDefault(uint8_t cb_type, void *p_cb_data);
-
-	void                        (*m_scanCompleteCB)(BLEScanResults scanResults);
-	BLEAdvertisedDeviceCallbacks* m_pAdvertisedDeviceCallbacks = nullptr;	
+	bool                               m_wantDuplicates;
+	uint8_t                            m_scanMode = GAP_SCAN_MODE_ACTIVE;
+	uint16_t                           m_scanInterval = 0x40;              // Duration to wait between starting a scan. Value range: 0x0004 - 0x4000 (2.5ms - 10240ms)(0.625ms/step).
+	uint16_t                           m_scanWindow = 0x30;                // Duration to continuously scan for after starting. Value range: 0x0004 - 0x4000 (2.5ms - 10240ms)(0.625ms/step).
+	BLEFreeRTOS::Semaphore             m_semaphoreScanEnd = BLEFreeRTOS::Semaphore("ScanEnd");
+    void                               updateScanParams();
+    T_APP_RESULT                       gapCallbackDefault(uint8_t cb_type, void *p_cb_data);
+    
+	BLEScanResults                     m_scanResults;
+	void                               (*m_scanCompleteCB)(BLEScanResults scanResults);
+	BLEAdvertisedDeviceCallbacks*      m_pAdvertisedDeviceCallbacks = nullptr;	
 	
 };
 
