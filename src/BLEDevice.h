@@ -1,8 +1,8 @@
 /*
  * BLEDevice.h
  *
- *  Created on: Mar 16, 2017
- *      Author: kolban
+ *  Created on: Mar 16, 2020  
+ *      Author: coolc
  */
 
 #ifndef MAIN_BLEDevice_H_
@@ -12,7 +12,7 @@
 #include <string>
 #include "BLEServer.h"
 #include "BLEScan.h"
-#include "FreeRTOS.h"
+#include "BLEFreeRTOS.h"
 #include "BLEClient.h"
 #define BTDEBUG 0
 typedef uint8_t T_CLIENT_ID;
@@ -30,10 +30,11 @@ private:
     static BLEClient*	m_pClient;
     static BLEScan*	   _pBLEScan;
 	static std::map<uint16_t, conn_status_t> m_connectedClientsMap;
+
 	static T_APP_RESULT gapEventHandler(uint8_t cb_type, void *p_cb_data);
-    static T_APP_RESULT gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data );	
+	static T_APP_RESULT gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data );
 	static void ble_handle_gap_msg(T_IO_MSG *p_gap_msg);
 		
-};	
+};
 
 #endif /* MAIN_BLEDevice_H_ */

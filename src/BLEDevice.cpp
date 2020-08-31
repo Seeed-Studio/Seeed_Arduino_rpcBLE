@@ -69,20 +69,30 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:cl
 	if(!initialized){
 		initialized = true; // Set the initialization flag to ensure we are only initialized once.  
 	/*
-	 *
+	 * Bluetooth controller initialization
 	 */
 	rpc_ble_init();
-	//rpc_gap_config_max_le_link_num(3);
-	//pc_le_gap_init(3);
-	//ble_client_init(BLE_CLIENT_MAX_APPS);
+  
+  
+    /*
+     *  Register the Bluetooth callback function
+     */
+    le_register_app_cb(BLEDevice::gapEventHandler);
+    le_register_msg_handler(BLEDevice::ble_handle_gap_msg);
+    le_register_gattc_cb(BLEDevice::gattClientEventHandler);
 
-	le_register_app_cb(gapEventHandler);
-    le_register_msg_handler(ble_handle_gap_msg);
-    le_register_gattc_cb(gattClientEventHandler);
-	
-	
+    /*
+     * Set Bluetooth device  name
+     */
+    uint8_t  device_name[GAP_DEVICE_NAME_LEN] = {0};
+    memcpy(device_name,deviceName.c_str(),GAP_DEVICE_NAME_LEN);
+    le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN,device_name);
+
+	/*
+     * Activate the Bluetooth controller
+     */
 	rpc_ble_start();
-    Serial.printf("BLEDevice::init...................");
+    Serial.printf("BLEDevice::init End...................");
 	}
 	
 } // init
