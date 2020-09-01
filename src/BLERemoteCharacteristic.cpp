@@ -16,8 +16,9 @@ BLERemoteCharacteristic::BLERemoteCharacteristic(
 	BLERemoteService*    pRemoteService
     ) {
 	m_handle         = value_handle;
+	m_charProp       = properties;
 	m_uuid           = uuid;
-	m_end_handle      = pRemoteService->getEndHandle();
+	m_end_handle     = pRemoteService->getEndHandle();
 	m_pRemoteService = pRemoteService;
 	m_notifyCallback = nullptr;
 	m_rawData = nullptr;
@@ -58,8 +59,8 @@ BLERemoteService* BLERemoteCharacteristic::getRemoteService() {
  * @return True if the characteristic supports reading.
  */
 bool BLERemoteCharacteristic::canRead() {
-	//return (m_charProp & ESP_GATT_CHAR_PROP_BIT_READ) != 0;
-	return true;
+	Serial.println(m_charProp);
+	return (m_charProp & GATT_CHAR_PROP_READ) != 0;	
 } // canRead
 
 
@@ -68,11 +69,17 @@ bool BLERemoteCharacteristic::canRead() {
  * @return True if the characteristic supports notifications.
  */
 bool BLERemoteCharacteristic::canNotify() {
-	//return (m_charProp & ESP_GATT_CHAR_PROP_BIT_NOTIFY) != 0;
-	return true;
+	return (m_charProp & GATT_CHAR_PROP_NOTIFY) != 0;
 } // canNotify
 
 
+/**
+ * @brief Does the characteristic support writing?
+ * @return True if the characteristic supports writing.
+ */
+bool BLERemoteCharacteristic::canWrite() {
+	return (m_charProp & GATT_CHAR_PROP_WRITE) != 0;
+} // canWrite
 
 
 /**
@@ -84,7 +91,6 @@ std::string BLERemoteCharacteristic::readValue() {
 	if (!getRemoteService()->getClient()->isConnected()) {
 		return std::string();
 	}
-    Serial.println("BLERemoteCharacteristic::readValue()\n\r");
 	
 	m_semaphoreReadCharEvt.take("readValue");
 
@@ -98,7 +104,6 @@ std::string BLERemoteCharacteristic::readValue() {
  */
     client_attr_read(m_pRemoteService->getClient()->getConnId(), m_pRemoteService->getClient()->getGattcIf(),getHandle());
 	
-    Serial.println("client_attr_read\n\r");
 	// Block waiting for the event that indicates that the read has completed.  When it has, the std::string found
 	// in m_value will contain our data.
 	m_semaphoreReadCharEvt.wait("readValue");
@@ -162,7 +167,7 @@ void BLERemoteCharacteristic::writeValue(uint8_t newValue, bool response) {
 	writeValue(&newValue, 1, response);
 } // writeValue
 
-#if 1
+
 /**
  * @brief Write the new value for the characteristic.
  * @param [in] newValue The new value to write.
@@ -172,7 +177,7 @@ void BLERemoteCharacteristic::writeValue(uint8_t newValue, bool response) {
 void BLERemoteCharacteristic::writeValue(std::string newValue, bool response) {
 	writeValue((uint8_t*)newValue.c_str(), strlen(newValue.c_str()), response);
 } // writeValue
-#endif
+
 
 void BLERemoteCharacteristic::writeValue(uint8_t* data, size_t length, bool response) {
 
@@ -183,16 +188,6 @@ void BLERemoteCharacteristic::writeValue(uint8_t* data, size_t length, bool resp
     Serial.println("BLERemoteCharacteristic::writeValue entry\n\r");
 	m_semaphoreWriteCharEvt.take("writeValue");
 	// Invoke the ESP-IDF API to perform the write.
-	/* esp_err_t errRc = ::esp_ble_gattc_write_char(
-		m_pRemoteService->getClient()->getGattcIf(),
-		m_pRemoteService->getClient()->getConnId(),
-		getHandle(),
-		length,
-		data,
-		response?ESP_GATT_WRITE_TYPE_RSP:ESP_GATT_WRITE_TYPE_NO_RSP,
-        m_auth
-	); */
-
 	client_attr_write(m_pRemoteService->getClient()->getConnId(),m_pRemoteService->getClient()->getGattcIf(),GATT_WRITE_TYPE_REQ,getHandle(),length,(uint8_t *)data);
     Serial.println("BLERemoteCharacteristic::writeValue end\n\r");
 	m_semaphoreWriteCharEvt.wait("writeValue");
