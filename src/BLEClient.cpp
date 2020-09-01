@@ -50,6 +50,13 @@ void BLEClient::setClientCallbacks(BLEClientCallbacks* pClientCallbacks) {
  * Add overloaded function to ease connect to peer device with not public address
  */
 bool BLEClient::connect(BLEAdvertisedDevice* device) {
+/*
+ * client initialization
+ */
+    ble_client_init(BLE_CLIENT_MAX_APPS);
+    T_CLIENT_ID client_id = ble_add_client(0, BLE_CLIENT_MAX_LINKS);
+	m_gattc_if = client_id;
+
 	BLEAddress address =  device->getAddress();
 	T_GAP_REMOTE_ADDR_TYPE type = device->getAddressType();
 	return connect(address, type);
@@ -65,11 +72,9 @@ bool BLEClient::connect(BLEAddress address, T_GAP_REMOTE_ADDR_TYPE type) {
 	
 	m_appId = BLEDevice::m_appId++;
 	BLEDevice::addPeerDevice(this, true, m_appId);
-//******************************需要修改**************************************	
-	//m_peerAddress = address;
-	//uint8_t bd_addr[6] = {0x7d, 0x18, 0x1b, 0xf1, 0xf7, 0x2c};
-	
-//连接到client
+    m_peerAddress = address;
+
+//connect client
     T_GAP_LE_CONN_REQ_PARAM conn_req_param;
 	conn_req_param.scan_interval = 0x10;
 	conn_req_param.scan_window = 0x10;
@@ -83,7 +88,7 @@ bool BLEClient::connect(BLEAddress address, T_GAP_REMOTE_ADDR_TYPE type) {
 	le_set_conn_param(GAP_CONN_PARAM_1M, &conn_req_param);
 
 
-  //***********************真正实现连接****************
+//***********************connected****************
     T_GAP_CAUSE result = le_connect(0, (uint8_t *)address.getNative(), type, GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
 	if (result == GAP_CAUSE_SUCCESS)
 	{
@@ -93,8 +98,7 @@ bool BLEClient::connect(BLEAddress address, T_GAP_REMOTE_ADDR_TYPE type) {
 	uint8_t conn_id = 0xff;
 	le_get_conn_id((uint8_t *)address.getNative(), GAP_REMOTE_ADDR_LE_PUBLIC, &conn_id);
 	m_conn_id = conn_id;
-	
-	
+		
 } // connect
 
 uint8_t BLEClient::getGattcIf() {
@@ -307,8 +311,15 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
         break;
     case BLE_CLIENT_CB_TYPE_NOTIF_IND:
         break;
-    case BLE_CLIENT_CB_TYPE_DISCONNECT_RESULT:
+    case BLE_CLIENT_CB_TYPE_DISCONNECT_RESULT: {
+	    m_isConnected = false;
+		if (m_pClientCallbacks != nullptr) {
+			m_pClientCallbacks->onDisconnect(this);
+		}
+		m_semaphoreSearchCmplEvt.give(1);
+		BLEDevice::removePeerDevice(m_appId, true);
         break;
+	}
     default:
         break;
     }
