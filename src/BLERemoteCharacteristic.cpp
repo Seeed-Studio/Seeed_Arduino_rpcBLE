@@ -12,12 +12,11 @@ BLERemoteCharacteristic::BLERemoteCharacteristic(
     uint16_t    decl_handle,  
     uint16_t    properties,   
     uint16_t    value_handle,  
-    uint16_t    uuid16,
+    BLEUUID     uuid,
 	BLERemoteService*    pRemoteService
     ) {
 	m_handle         = value_handle;
-	m_srvcId16       = uuid16;
-	m_uuid           = BLEUUID(m_srvcId16);
+	m_uuid           = uuid;
 	m_end_handle      = pRemoteService->getEndHandle();
 	m_pRemoteService = pRemoteService;
 	m_notifyCallback = nullptr;

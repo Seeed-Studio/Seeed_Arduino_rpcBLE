@@ -143,17 +143,7 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
         switch (discov_type)
         {
             Serial.printf("discov_type:%d\n\r", discov_type);
-        case DISC_RESULT_ALL_SRV_UUID16:
-        {   
-
-			break;
-        }
-        case DISC_RESULT_ALL_SRV_UUID128:
-        {
-            T_GATT_SERVICE_ELEM128 *disc_data = (T_GATT_SERVICE_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_uuid128_disc_data);
-     
-            break;
-        }
+      
         case DISC_RESULT_SRV_DATA:
         {
             T_GATT_SERVICE_BY_UUID_ELEM *disc_data = (T_GATT_SERVICE_BY_UUID_ELEM *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_disc_data);
@@ -169,7 +159,7 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
 		    disc_data->decl_handle,
 			disc_data->properties,
 			disc_data->value_handle,
-			disc_data->uuid16,
+			uuid,
 			this
 		    ); 
 			
@@ -181,17 +171,18 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
         case DISC_RESULT_CHAR_UUID128:
         {
             T_GATT_CHARACT_ELEM128 *disc_data = (T_GATT_CHARACT_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid128_disc_data);
-           
-            break;
-        }
-        case DISC_RESULT_CHAR_DESC_UUID16:
-        {
-
-			break;
-        }
-        case DISC_RESULT_CHAR_DESC_UUID128:
-        {
-            T_GATT_CHARACT_DESC_ELEM128 *disc_data = (T_GATT_CHARACT_DESC_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid128_disc_data);
+			
+			BLEUUID uuid = BLEUUID(disc_data->uuid128,16);
+			BLERemoteCharacteristic *pNewRemoteCharacteristic = new BLERemoteCharacteristic(
+		    disc_data->decl_handle,
+			disc_data->properties,
+			disc_data->value_handle,
+			uuid,
+			this
+		    ); 
+			
+            m_characteristicMap.insert(std::pair<std::string, BLERemoteCharacteristic*>(pNewRemoteCharacteristic->getUUID().toString(), pNewRemoteCharacteristic));
+		    m_characteristicMapByHandle.insert(std::pair<uint16_t, BLERemoteCharacteristic*>(disc_data->decl_handle, pNewRemoteCharacteristic));           
             break;
         }
         default:
@@ -199,21 +190,10 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
         }
        
     }
-    case BLE_CLIENT_CB_TYPE_READ_RESULT:
-        break;
-    case BLE_CLIENT_CB_TYPE_WRITE_RESULT:
-        break;
-    case BLE_CLIENT_CB_TYPE_NOTIF_IND:
-        break;
-    case BLE_CLIENT_CB_TYPE_DISCONNECT_RESULT: {
-        break;
-	}
+   
     default:
         break;
     }
-
-
-
 	// Send the event to each of the characteristics owned by this service.
 	for (auto &myPair : m_characteristicMapByHandle) {
 	   myPair.second->clientCallbackDefault(client_id,conn_id,p_data);
