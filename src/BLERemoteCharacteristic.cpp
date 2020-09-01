@@ -260,7 +260,9 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
 			BLERemoteCharacteristic::m_semaphoregetdescEvt.give(0);
 			Serial.printf("m_semaphoregetchaEvt");
 			break;
-			}					
+			}
+			default:
+			    break;					
 		}
         break;
 	}
@@ -333,6 +335,7 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
     default:
         break;
     }
+	return result;
 }
 
 

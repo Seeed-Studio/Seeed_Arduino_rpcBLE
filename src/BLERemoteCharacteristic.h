@@ -24,6 +24,7 @@ public:
 	
 	bool        canRead();
 	bool        canNotify();
+	bool        canWrite();
 	
 	std::string readValue();
 	
@@ -53,7 +54,7 @@ private:
 	uint16_t             m_handle;
 	BLERemoteService*    m_pRemoteService;
 	uint8_t 			 *m_rawData;
-	
+	uint16_t             m_charProp;
 	std::string          m_value;
 	
 	
