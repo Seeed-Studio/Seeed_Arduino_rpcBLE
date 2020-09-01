@@ -14,16 +14,16 @@
 BLERemoteService::BLERemoteService(
 	uint16_t    att_handle,
 	uint16_t    end_group_handle,
-    uint16_t    uuid16,
+    BLEUUID     uuid,
 	BLEClient*    pClient
 	) {
-	m_srvcId16  = uuid16;
-	m_uuid    = BLEUUID(m_srvcId16);
+	m_uuid    = uuid;
 	m_haveCharacteristics = false;
 	m_startHandle = att_handle;
 	m_endHandle = end_group_handle;
 	m_pClient = pClient;
 }
+
 
 BLERemoteService::~BLERemoteService() {
 }

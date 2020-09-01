@@ -221,7 +221,7 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
 			BLERemoteService* pRemoteService = new BLERemoteService( 
 			disc_data->att_handle,
             disc_data->end_group_handle,
-			disc_data->uuid16,
+			uuid,
 			this
 			);
 			
@@ -236,7 +236,16 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
         case DISC_RESULT_ALL_SRV_UUID128:
         {
             T_GATT_SERVICE_ELEM128 *disc_data = (T_GATT_SERVICE_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_uuid128_disc_data);
-     
+			BLEUUID uuid = BLEUUID(disc_data->uuid128,16);
+			BLERemoteService* pRemoteService = new BLERemoteService( 
+			disc_data->att_handle,
+            disc_data->end_group_handle,
+			uuid,
+			this
+			);
+			
+			Serial.println(pRemoteService->getUUID().toString().c_str());  
+			m_servicesMap.insert(std::pair<std::string, BLERemoteService*>(uuid.toString(), pRemoteService));			
             break;
         }
         case DISC_RESULT_SRV_DATA:
@@ -244,27 +253,8 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
             T_GATT_SERVICE_BY_UUID_ELEM *disc_data = (T_GATT_SERVICE_BY_UUID_ELEM *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_disc_data);
             Serial.printf("start_handle:%d, end handle:%d\n\r", disc_data->att_handle, disc_data->end_group_handle);
             break;
-        }
-        case DISC_RESULT_CHAR_UUID16:
-        {
-            
-            break;
-        }
-        case DISC_RESULT_CHAR_UUID128:
-        {
-            T_GATT_CHARACT_ELEM128 *disc_data = (T_GATT_CHARACT_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid128_disc_data);
-           
-            break;
-        }
-        case DISC_RESULT_CHAR_DESC_UUID16:
-        {
-			break;
-        }
-        case DISC_RESULT_CHAR_DESC_UUID128:
-        {
-            T_GATT_CHARACT_DESC_ELEM128 *disc_data = (T_GATT_CHARACT_DESC_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid128_disc_data);
-            break;
-        }
+        }  
+     
         default:
             break;
         }

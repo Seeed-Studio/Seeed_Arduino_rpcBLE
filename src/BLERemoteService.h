@@ -30,8 +30,8 @@ public:
 	
 private:
    friend class BLEClient;
-   BLERemoteService(uint16_t att_handle, uint16_t end_group_handle, uint16_t uuid16, BLEClient* pClient);
-//   BLERemoteService(uint16_t att_handle,uint16_t end_group_handle,uint8_t uuid128[16],BLEClient* pClient);
+   BLERemoteService(uint16_t att_handle, uint16_t end_group_handle, BLEUUID uuid, BLEClient* pClient);
+
 	
 	uint16_t            getStartHandle();
 
@@ -39,8 +39,6 @@ private:
     void            retrieveCharacteristics(void);
     void            removeCharacteristics();
 	
-	uint16_t        m_srvcId16;
-//	uint8_t         m_srvcId128[16];
 	BLEUUID         m_uuid;
 	uint16_t        m_startHandle;
 	uint16_t        m_endHandle;

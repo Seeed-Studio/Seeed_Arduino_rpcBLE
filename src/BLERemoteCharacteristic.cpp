@@ -276,32 +276,6 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
 		switch (discov_type)
         {
             Serial.printf("discov_type:%d\n\r", discov_type);
-        case DISC_RESULT_ALL_SRV_UUID16:
-        {   			
-			break;
-        }
-        case DISC_RESULT_ALL_SRV_UUID128:
-        {
-            T_GATT_SERVICE_ELEM128 *disc_data = (T_GATT_SERVICE_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_uuid128_disc_data);
-     
-            break;
-        }
-        case DISC_RESULT_SRV_DATA:
-        {
-            T_GATT_SERVICE_BY_UUID_ELEM *disc_data = (T_GATT_SERVICE_BY_UUID_ELEM *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_disc_data);
-            Serial.printf("start_handle:%d, end handle:%d\n\r", disc_data->att_handle, disc_data->end_group_handle);
-            break;
-        }
-        case DISC_RESULT_CHAR_UUID16:
-        {
-            break;
-        }
-        case DISC_RESULT_CHAR_UUID128:
-        {
-            T_GATT_CHARACT_ELEM128 *disc_data = (T_GATT_CHARACT_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid128_disc_data);
-           
-            break;
-        }
         case DISC_RESULT_CHAR_DESC_UUID16:
         {
             T_GATT_CHARACT_DESC_ELEM16 *disc_data = (T_GATT_CHARACT_DESC_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid16_disc_data);
