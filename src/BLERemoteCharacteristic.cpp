@@ -277,23 +277,27 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
             Serial.printf("discov_type:%d\n\r", discov_type);
         case DISC_RESULT_CHAR_DESC_UUID16:
         {
-            T_GATT_CHARACT_DESC_ELEM16 *disc_data = (T_GATT_CHARACT_DESC_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid16_disc_data);
-			
+            T_GATT_CHARACT_DESC_ELEM16 *disc_data = (T_GATT_CHARACT_DESC_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid16_disc_data);			
 			BLERemoteDescriptor* pNewRemoteDescriptor = new BLERemoteDescriptor(
 			disc_data->handle,
 			BLEUUID(disc_data->uuid16),
 			this
 		    );  
 			Serial.println(pNewRemoteDescriptor->getUUID().toString().c_str());
-			Serial.print("m_descriptorMap.insert start\n\r ");
 		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
-			Serial.print("m_descriptorMap.insert end\n\r ");
 			break;
         }
         case DISC_RESULT_CHAR_DESC_UUID128:
         {
             T_GATT_CHARACT_DESC_ELEM128 *disc_data = (T_GATT_CHARACT_DESC_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid128_disc_data);
-            break;
+            BLERemoteDescriptor* pNewRemoteDescriptor = new BLERemoteDescriptor(
+			disc_data->handle,
+			BLEUUID(disc_data->uuid128,16),
+			this
+		    );  
+			Serial.println(pNewRemoteDescriptor->getUUID().toString().c_str());
+		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
+			break;
         }
         default:
             break;
