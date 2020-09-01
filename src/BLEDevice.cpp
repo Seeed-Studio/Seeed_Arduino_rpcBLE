@@ -36,15 +36,7 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:cl
  */
 /* STATIC */ BLEClient* BLEDevice::createClient() {
 	m_pClient = new BLEClient();
-	
-//**************初始化clinet*********************
-    ble_client_init(BLE_CLIENT_MAX_APPS);
 
-//***************注册clint回调函数*****************
-
-
-    T_CLIENT_ID client_id = ble_add_client(0, BLE_CLIENT_MAX_LINKS);
-	BLEClient::m_gattc_if = client_id;
 	return m_pClient;
 } // createClient
 
@@ -104,24 +96,11 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:cl
 	  uint8_t cb_type,
 	  void *p_cb_data) {
 	T_APP_RESULT ret = APP_RESULT_SUCCESS;
-#if 0	  
-	if (BLEDevice::m_pClient != nullptr) {
-		BLEDevice::m_pClient->handleGAPEvent(event, param);
-	}
-#endif
+	  
 	if (BLEDevice::_pBLEScan != nullptr) {
 		BLEDevice::getScan()->gapCallbackDefault(cb_type,p_cb_data);
 	}
 	
-#if 0
-	if(m_bleAdvertising != nullptr) {
-		BLEDevice::getAdvertising()->handleGAPEvent(event, param);
-	}
-
-	if(m_customGapHandler != nullptr) {
-		BLEDevice::m_customGapHandler(event, param);
-	}
-#endif
 	return ret;
 } // gapEventHandler
 
@@ -160,8 +139,13 @@ void BLEDevice::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
 		.mtu = 23
 	};
 
-	m_connectedClientsMap .insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
+	m_connectedClientsMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
 }
+void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
+	if(m_connectedClientsMap.find(conn_id) != m_connectedClientsMap.end())
+		m_connectedClientsMap.erase(conn_id);
+}
+
 
 /**
  * @brief    All the BT GAP MSG are pre-handled in this function.
