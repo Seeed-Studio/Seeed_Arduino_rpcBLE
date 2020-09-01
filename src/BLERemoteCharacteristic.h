@@ -36,7 +36,6 @@ public:
 	
 	std::string toString();
 	
-	static BLERemoteCharacteristic*     _this;
 private:
     friend class BLEClient;
 	friend class BLERemoteService;
@@ -66,6 +65,7 @@ private:
 	void              removeDescriptors();
 	bool              m_haveDescriptor;
 	
+	std::map<std::string, BLERemoteDescriptor*> m_descriptorMap;
 	BLEFreeRTOS::Semaphore m_semaphoreReadCharEvt  = BLEFreeRTOS::Semaphore("ReadCharEvt");
 	BLEFreeRTOS::Semaphore  m_semaphoreRegForNotifyEvt  = BLEFreeRTOS::Semaphore("RegForNotifyEvt");
 	BLEFreeRTOS::Semaphore m_semaphoregetdescEvt = BLEFreeRTOS::Semaphore("getDescriptor");

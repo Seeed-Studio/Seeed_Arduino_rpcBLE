@@ -22,7 +22,6 @@ public:
 	BLERemoteCharacteristic* getCharacteristic(BLEUUID uuid);
 	BLEClient*               getClient(void);
 	
-	static BLERemoteService*     _this;
 	uint16_t                 getHandle();
 	uint16_t                 getEndHandle();
 	BLEUUID                  getUUID(void);
@@ -47,7 +46,9 @@ private:
 	uint16_t        m_endHandle;
 	BLEClient*      m_pClient;
 	bool            m_haveCharacteristics;
-	
+
+	std::map<std::string, BLERemoteCharacteristic*> m_characteristicMap;
+	std::map<uint16_t, BLERemoteCharacteristic*> m_characteristicMapByHandle;
 	BLEFreeRTOS::Semaphore m_semaphoregetchaEvt = BLEFreeRTOS::Semaphore("getCharacteristic");
 
   	T_APP_RESULT   clientCallbackDefault(T_CLIENT_ID client_id, uint8_t conn_id, void *p_dat);

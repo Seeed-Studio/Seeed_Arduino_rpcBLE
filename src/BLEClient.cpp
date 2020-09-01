@@ -202,18 +202,7 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
 			Serial.printf("m_semaphoreSearchCmplEvt.give(0)\n\r");
 			break;
 			}
-			case DISC_STATE_CHAR_DONE:
-			{
-			BLERemoteService::_this->m_semaphoregetchaEvt.give(0);
-			Serial.printf("m_semaphoregetchaEvt");
-			break;
-			}		
-            case DISC_STATE_CHAR_DESCRIPTOR_DONE:
-			{
-			BLERemoteCharacteristic::_this->m_semaphoregetdescEvt.give(0);
-			Serial.printf("m_semaphoregetchaEvt");
-			break;
-			}					
+				
 		}
 		
         break;
@@ -258,20 +247,7 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
         }
         case DISC_RESULT_CHAR_UUID16:
         {
-            T_GATT_CHARACT_ELEM16 *disc_data = (T_GATT_CHARACT_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid16_disc_data);
-			
-			BLEUUID uuid = BLEUUID(disc_data->uuid16);
-			BLERemoteCharacteristic *pNewRemoteCharacteristic = new BLERemoteCharacteristic(
-		    disc_data->decl_handle,
-			disc_data->properties,
-			disc_data->value_handle,
-			disc_data->uuid16,
-			BLERemoteService::_this
-		    ); 
-			
-            m_characteristicMap.insert(std::pair<std::string, BLERemoteCharacteristic*>(pNewRemoteCharacteristic->getUUID().toString(), pNewRemoteCharacteristic));
-		    m_characteristicMapByHandle.insert(std::pair<uint16_t, BLERemoteCharacteristic*>(disc_data->decl_handle, pNewRemoteCharacteristic));					
-           
+            
             break;
         }
         case DISC_RESULT_CHAR_UUID128:
@@ -282,17 +258,6 @@ T_APP_RESULT BLEClient::clientCallbackDefault(T_CLIENT_ID client_id, uint8_t con
         }
         case DISC_RESULT_CHAR_DESC_UUID16:
         {
-            T_GATT_CHARACT_DESC_ELEM16 *disc_data = (T_GATT_CHARACT_DESC_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid16_disc_data);
-			
-			BLERemoteDescriptor* pNewRemoteDescriptor = new BLERemoteDescriptor(
-			disc_data->handle,
-			BLEUUID(disc_data->uuid16),
-			BLERemoteCharacteristic::_this
-		    );  
-			Serial.println(pNewRemoteDescriptor->getUUID().toString().c_str());
-			Serial.print("m_descriptorMap.insert start\n\r ");
-		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
-			Serial.print("m_descriptorMap.insert end\n\r ");
 			break;
         }
         case DISC_RESULT_CHAR_DESC_UUID128:

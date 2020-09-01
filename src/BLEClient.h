@@ -50,10 +50,6 @@ public:
 	std::map<std::string, BLERemoteService*>*  getServices(); 
 	BLERemoteService*                          getService(BLEUUID uuid);  
 	
-	std::map<std::string, BLERemoteCharacteristic*> m_characteristicMap;
-	std::map<uint16_t, BLERemoteCharacteristic*> m_characteristicMapByHandle;
-	std::map<std::string, BLERemoteDescriptor*> m_descriptorMap;
-	
 //	static BLEClient*     _this;
 	
 	uint16_t         m_appId;

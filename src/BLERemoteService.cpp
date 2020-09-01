@@ -10,7 +10,6 @@
 #include <sstream>
 #include "BLERemoteService.h"
 #pragma GCC diagnostic warning "-Wunused-but-set-parameter"
-BLERemoteService *BLERemoteService::_this = NULL;
 
 BLERemoteService::BLERemoteService(
 	uint16_t    att_handle,
@@ -72,7 +71,7 @@ BLERemoteCharacteristic* BLERemoteService::getCharacteristic(BLEUUID uuid) {
 		retrieveCharacteristics();
 	}
 	std::string v = uuid.toString();
-	for (auto &myPair : m_pClient->m_characteristicMap) {
+	for (auto &myPair : m_characteristicMap) {
 		if (myPair.first == v) {
 			return myPair.second;
 		}
@@ -90,7 +89,6 @@ void BLERemoteService::retrieveCharacteristics() {
 	removeCharacteristics(); // Forget any previous characteristics.
 	client_all_char_discovery(m_pClient->getConnId(), m_pClient->getGattcIf(),m_startHandle,m_endHandle);
     
-	BLERemoteService::_this = this;
     m_semaphoregetchaEvt.take("getCharacteristic");	
 	m_haveCharacteristics = (m_semaphoregetchaEvt.wait("getCharacteristic") == 0);	
 
@@ -104,28 +102,120 @@ void BLERemoteService::retrieveCharacteristics() {
  * @return N/A.
  */
 void BLERemoteService::removeCharacteristics() {
-	for (auto &myPair : m_pClient->m_characteristicMap) {
+	for (auto &myPair : m_characteristicMap) {
 	   delete myPair.second;
 	   //m_characteristicMap.erase(myPair.first);  // Should be no need to delete as it will be deleted by the clear
 	}
-	getClient()->m_characteristicMap.clear();   // Clear the map
-	for (auto &myPair : m_pClient->m_characteristicMapByHandle) {
+	m_characteristicMap.clear();   // Clear the map
+	for (auto &myPair : m_characteristicMapByHandle) {
 	   delete myPair.second;
 	}
-	m_pClient->m_characteristicMapByHandle.clear();   // Clear the map
+	m_characteristicMapByHandle.clear();   // Clear the map
 } // removeCharacteristics
 
 T_APP_RESULT BLERemoteService::clientCallbackDefault(
 	T_CLIENT_ID client_id, uint8_t conn_id, void *p_data) {
 	T_APP_RESULT result = APP_RESULT_SUCCESS;
     T_BLE_CLIENT_CB_DATA *p_ble_client_cb_data = (T_BLE_CLIENT_CB_DATA *)p_data;
-	switch (p_ble_client_cb_data->cb_type) {	
-		default:
+
+    switch (p_ble_client_cb_data->cb_type)
+    {
+    case BLE_CLIENT_CB_TYPE_DISCOVERY_STATE:
+	{
+        Serial.printf("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
+		//give se
+		T_DISCOVERY_STATE state = p_ble_client_cb_data->cb_content.discov_state.state;
+		switch(state)
+		{
+			case DISC_STATE_CHAR_DONE:
+			{
+			BLERemoteService::m_semaphoregetchaEvt.give(0);
+			Serial.printf("m_semaphoregetchaEvt");
 			break;
-	} // switch
+			}						
+		}
+		
+        break;
+	}
+    case BLE_CLIENT_CB_TYPE_DISCOVERY_RESULT:
+    {
+		T_DISCOVERY_RESULT_TYPE discov_type = p_ble_client_cb_data->cb_content.discov_result.discov_type;
+        switch (discov_type)
+        {
+            Serial.printf("discov_type:%d\n\r", discov_type);
+        case DISC_RESULT_ALL_SRV_UUID16:
+        {   
+
+			break;
+        }
+        case DISC_RESULT_ALL_SRV_UUID128:
+        {
+            T_GATT_SERVICE_ELEM128 *disc_data = (T_GATT_SERVICE_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_uuid128_disc_data);
+     
+            break;
+        }
+        case DISC_RESULT_SRV_DATA:
+        {
+            T_GATT_SERVICE_BY_UUID_ELEM *disc_data = (T_GATT_SERVICE_BY_UUID_ELEM *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_disc_data);
+            Serial.printf("start_handle:%d, end handle:%d\n\r", disc_data->att_handle, disc_data->end_group_handle);
+            break;
+        }
+        case DISC_RESULT_CHAR_UUID16:
+        {
+            T_GATT_CHARACT_ELEM16 *disc_data = (T_GATT_CHARACT_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid16_disc_data);
+			
+			BLEUUID uuid = BLEUUID(disc_data->uuid16);
+			BLERemoteCharacteristic *pNewRemoteCharacteristic = new BLERemoteCharacteristic(
+		    disc_data->decl_handle,
+			disc_data->properties,
+			disc_data->value_handle,
+			disc_data->uuid16,
+			this
+		    ); 
+			
+            m_characteristicMap.insert(std::pair<std::string, BLERemoteCharacteristic*>(pNewRemoteCharacteristic->getUUID().toString(), pNewRemoteCharacteristic));
+		    m_characteristicMapByHandle.insert(std::pair<uint16_t, BLERemoteCharacteristic*>(disc_data->decl_handle, pNewRemoteCharacteristic));					
+           
+            break;
+        }
+        case DISC_RESULT_CHAR_UUID128:
+        {
+            T_GATT_CHARACT_ELEM128 *disc_data = (T_GATT_CHARACT_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_uuid128_disc_data);
+           
+            break;
+        }
+        case DISC_RESULT_CHAR_DESC_UUID16:
+        {
+
+			break;
+        }
+        case DISC_RESULT_CHAR_DESC_UUID128:
+        {
+            T_GATT_CHARACT_DESC_ELEM128 *disc_data = (T_GATT_CHARACT_DESC_ELEM128 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid128_disc_data);
+            break;
+        }
+        default:
+            break;
+        }
+       
+    }
+    case BLE_CLIENT_CB_TYPE_READ_RESULT:
+        break;
+    case BLE_CLIENT_CB_TYPE_WRITE_RESULT:
+        break;
+    case BLE_CLIENT_CB_TYPE_NOTIF_IND:
+        break;
+    case BLE_CLIENT_CB_TYPE_DISCONNECT_RESULT: {
+        break;
+	}
+    default:
+        break;
+    }
+
+
 
 	// Send the event to each of the characteristics owned by this service.
-	for (auto &myPair : m_pClient->m_characteristicMapByHandle) {
+	for (auto &myPair : m_characteristicMapByHandle) {
 	   myPair.second->clientCallbackDefault(client_id,conn_id,p_data);
 	}
 	return result;
