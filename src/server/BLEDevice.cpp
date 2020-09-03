@@ -4,7 +4,7 @@
 
 #include "BLEDevice.h"
 #include <Arduino.h>
-#include "Seeed_erpcUnified.h"
+
 
 
 
@@ -15,6 +15,8 @@
 bool       initialized          = false;  
 BLEScan*   BLEDevice::_pBLEScan   = nullptr;
 BLEClient* BLEDevice::m_pClient = nullptr;
+BLEServer* BLEDevice::m_pServer = nullptr;
+BLEAdvertising* BLEDevice::m_bleAdvertising = nullptr;
 T_CLIENT_ID BLEClient::m_gattc_if = 0;
 
 std::map<uint16_t, conn_status_t> BLEDevice::m_connectedClientsMap;
@@ -28,6 +30,16 @@ T_GAP_CONN_STATE ble_gap_conn_state = GAP_CONN_STATE_DISCONNECTED;
 T_APP_LINK ble_clinet_link_table[BLE_CLIENT_MAX_LINKS];
 RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:client
 
+
+/**
+ * @brief Create a new instance of a server.
+ * @return A new instance of the server.
+ */
+/* STATIC */ BLEServer* BLEDevice::createServer() {
+	m_pServer = new BLEServer();
+	m_pServer->createApp(m_appId++);
+	return m_pServer;
+} // createServer
 
 
 /**
@@ -53,6 +65,18 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:cl
 } // getScan
 
 
+BLEAdvertising* BLEDevice::getAdvertising() {
+	if(m_bleAdvertising == nullptr) {
+		m_bleAdvertising = new BLEAdvertising();
+	}
+	return m_bleAdvertising; 
+}
+
+void BLEDevice::startAdvertising() {
+	getAdvertising()->start();
+} // startAdvertising
+
+
 /**
  * @brief Initialize the %BLE environment.
  * @param deviceName The device name of the device.
@@ -72,6 +96,9 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:cl
     le_register_app_cb(BLEDevice::gapEventHandler);
     le_register_msg_handler(BLEDevice::ble_handle_gap_msg);
     le_register_gattc_cb(BLEDevice::gattClientEventHandler);
+
+    //************注册server的回调函数****************************************************************
+    //esp_ble_gatts_register_callback(BLEDevice::gattServerEventHandler);
 
     /*
      * Set Bluetooth device  name
@@ -145,6 +172,25 @@ void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
 	if(m_connectedClientsMap.find(conn_id) != m_connectedClientsMap.end())
 		m_connectedClientsMap.erase(conn_id);
 }
+
+
+/**
+ * @brief Handle GATT server events.
+ *
+ * @param [in] event The event that has been newly received.
+ * @param [in] gatts_if The connection to the GATT interface.
+ * @param [in] param Parameters for the event.
+ */
+/* STATIC */ void BLEDevice::gattServerEventHandler(
+   T_SERVER_ID service_id,
+   void *p_data
+) {	
+
+    if (BLEDevice::m_pServer != nullptr) {
+		BLEDevice::m_pServer->handleGATTServerEvent(service_id, p_data);
+	}
+
+} // gattServerEventHandler
 
 
 /**
