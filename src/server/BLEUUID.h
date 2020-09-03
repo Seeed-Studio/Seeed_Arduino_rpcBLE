@@ -39,6 +39,7 @@ public:
 	const char* str();
 	bool           equals(BLEUUID uuid);
 	bt_uuid_t* getNative();
+    BLEUUID        to128();
 
 private:
     bool          m_valueSet = false;   // Is there a value set for this instance.

@@ -134,6 +134,60 @@ const char* BLEUUID::str() {
 }
 
 
+/**
+ * @brief Convert a UUID to its 128 bit representation.
+ *
+ * A UUID can be internally represented as 16bit, 32bit or the full 128bit.  This method
+ * will convert 16 or 32 bit representations to the full 128bit.
+ */
+BLEUUID BLEUUID::to128() {
+	//log_v(">> toFull() - %s", toString().c_str());
+
+	// If we either don't have a value or are already a 128 bit UUID, nothing further to do.
+	if (!m_valueSet || m_uuid.len == UUID_LEN_128) {
+		return *this;
+	}
+
+	// If we are 16 bit or 32 bit, then set the 4 bytes of the variable part of the UUID.
+	if (m_uuid.len == UUID_LEN_16) {
+		uint16_t temp = m_uuid.uuid.uuid16;
+		m_uuid.uuid.uuid128[15] = 0;
+		m_uuid.uuid.uuid128[14] = 0;
+		m_uuid.uuid.uuid128[13] = (temp >> 8) & 0xff;
+		m_uuid.uuid.uuid128[12] = temp & 0xff;
+
+	}
+	else if (m_uuid.len == UUID_LEN_32) {
+		uint32_t temp = m_uuid.uuid.uuid32;
+		m_uuid.uuid.uuid128[15] = (temp >> 24) & 0xff;
+		m_uuid.uuid.uuid128[14] = (temp >> 16) & 0xff;
+		m_uuid.uuid.uuid128[13] = (temp >> 8) & 0xff;
+		m_uuid.uuid.uuid128[12] = temp & 0xff;
+	}
+
+	// Set the fixed parts of the UUID.
+	m_uuid.uuid.uuid128[11] = 0x00;
+	m_uuid.uuid.uuid128[10] = 0x00;
+
+	m_uuid.uuid.uuid128[9]  = 0x10;
+	m_uuid.uuid.uuid128[8]  = 0x00;
+
+	m_uuid.uuid.uuid128[7]  = 0x80;
+	m_uuid.uuid.uuid128[6]  = 0x00;
+
+	m_uuid.uuid.uuid128[5]  = 0x00;
+	m_uuid.uuid.uuid128[4]  = 0x80;
+	m_uuid.uuid.uuid128[3]  = 0x5f;
+	m_uuid.uuid.uuid128[2]  = 0x9b;
+	m_uuid.uuid.uuid128[1]  = 0x34;
+	m_uuid.uuid.uuid128[0]  = 0xfb;
+
+	m_uuid.len = UUID_LEN_128;
+
+	return *this;
+} // to128
+
+
 BLEUUID::BLEUUID(uint16_t uuid) {
 	m_uuid.len         = 2;
 	m_uuid.uuid.uuid16 = uuid;
