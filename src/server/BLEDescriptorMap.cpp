@@ -1,0 +1,87 @@
+/*
+ * BLEDescriptorMap.cpp
+ *
+ *  Created on: Jun 22, 2017
+ *      Author: kolban
+ */
+
+#include <sstream>
+#include <iomanip>
+#include "BLECharacteristic.h"
+#include "BLEDescriptor.h"
+
+
+/**
+ * @brief Return the descriptor by UUID.
+ * @param [in] UUID The UUID to look up the descriptor.
+ * @return The descriptor.  If not present, then nullptr is returned.
+ */
+BLEDescriptor* BLEDescriptorMap::getByUUID(BLEUUID uuid) {
+	for (auto &myPair : m_uuidMap) {
+		if (myPair.first->getUUID().equals(uuid)) {
+			return myPair.first;
+		}
+	}
+	return nullptr;
+} // getByUUID
+
+
+
+
+/**
+ * @brief Set the descriptor by UUID.
+ * @param [in] uuid The uuid of the descriptor.
+ * @param [in] characteristic The descriptor to cache.
+ * @return N/A.
+ */
+void BLEDescriptorMap::setByUUID(BLEUUID uuid, BLEDescriptor* pDescriptor) {
+	m_uuidMap.insert(std::pair<BLEDescriptor*, std::string>(pDescriptor, uuid.toString()));
+} // setByUUID
+
+
+
+/**
+ * @brief Return a string representation of the descriptor map.
+ * @return A string representation of the descriptor map.
+ */
+std::string BLEDescriptorMap::toString() {
+	std::string res;
+	char hex[5];
+	int count = 0;
+	for (auto &myPair : m_uuidMap) {
+		if (count > 0) {res += "\n";}
+		snprintf(hex, sizeof(hex), "%04x", myPair.first->getHandle());
+		count++;
+		res += "handle: 0x";
+		res += hex;
+		res += ", uuid: " + myPair.first->getUUID().toString();
+	}
+	return res;
+} // toString
+
+
+
+
+/**
+ * @brief Get the first descriptor in the map.
+ * @return The first descriptor in the map.
+ */
+BLEDescriptor* BLEDescriptorMap::getFirst() {
+	m_iterator = m_uuidMap.begin();
+	if (m_iterator == m_uuidMap.end()) return nullptr;
+	BLEDescriptor* pRet = m_iterator->first;
+	m_iterator++;
+	return pRet;
+} // getFirst
+
+
+/**
+ * @brief Get the next descriptor in the map.
+ * @return The next descriptor in the map.
+ */
+BLEDescriptor* BLEDescriptorMap::getNext() {
+	if (m_iterator == m_uuidMap.end()) return nullptr;
+	BLEDescriptor* pRet = m_iterator->first;
+	m_iterator++;
+	return pRet;
+} // getNext
