@@ -13,6 +13,8 @@
 #include "BLEDescriptor.h"
 #include "BLEValue.h"
 #include "BLEFreeRTOS.h"
+#include "BLEService.h"
+typedef uint8_t T_SERVER_ID;
 
 class BLEService;
 class BLEDescriptor;
@@ -28,6 +30,7 @@ public:
 	BLEDescriptor* getFirst();
 	BLEDescriptor* getNext();
 	std::string	toString();
+	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 
 
 private:
@@ -82,6 +85,7 @@ private:
 	BLEDescriptorMap            m_descriptorMap;
 
     void                 executeCreate(BLEService* pService);
+	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 	BLEFreeRTOS::Semaphore m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 	BLEFreeRTOS::Semaphore m_semaphoreSetValue  = BLEFreeRTOS::Semaphore("SetValue"); 
 

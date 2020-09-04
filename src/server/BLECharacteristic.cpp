@@ -203,3 +203,13 @@ void BLECharacteristic::executeCreate(BLEService* pService) {
 	} // End while
 
 } // executeCreate
+
+
+/**
+ * Handle a GATT server event.
+ */
+void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
+
+
+	m_descriptorMap.handleGATTServerEvent(service_id,p_datas);
+} // handleGATTServerEvent
