@@ -12,6 +12,7 @@
 #include "BLEServer.h"
 #include "BLEUUID.h"
 #include "BLEFreeRTOS.h"
+typedef uint8_t T_SERVER_ID;
 
 class BLEServer;
 
@@ -24,7 +25,7 @@ public:
 	BLECharacteristic* getByUUID(BLEUUID uuid);
 	BLECharacteristic* getFirst();
 	BLECharacteristic* getNext();
-
+    void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 
 private:
 	std::map<BLECharacteristic*, std::string> m_uuidMap;
@@ -61,6 +62,7 @@ private:
 	uint16_t             m_numHandles;
 
     BLECharacteristicMap m_characteristicMap;
+	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 	BLEFreeRTOS::Semaphore  m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 	BLEFreeRTOS::Semaphore  m_semaphoreStartEvt  = BLEFreeRTOS::Semaphore("StartEvt");
 

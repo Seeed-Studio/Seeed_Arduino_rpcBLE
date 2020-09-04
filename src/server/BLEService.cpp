@@ -158,3 +158,14 @@ void BLEService::start() {
 	
 	m_semaphoreStartEvt.wait("start");
 } // start
+
+
+/**
+ * @brief Handle a GATTS server event.
+ */
+void BLEService::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
+
+	
+	// Invoke the GATTS handler in each of the associated characteristics.
+	m_characteristicMap.handleGATTServerEvent(service_id,p_datas);
+} // handleGATTServerEvent

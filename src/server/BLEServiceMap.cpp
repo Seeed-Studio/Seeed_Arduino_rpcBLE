@@ -54,3 +54,11 @@ std::string BLEServiceMap::toString() {
 	}
 	return res;
 } // toString
+
+
+void BLEServiceMap::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
+	// Invoke the handler for every Service we have.
+	for (auto &myPair : m_uuidMap) {
+		myPair.first->handleGATTServerEvent(service_id, p_datas);
+	}
+}
