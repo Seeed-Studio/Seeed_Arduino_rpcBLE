@@ -103,3 +103,16 @@ void BLEDescriptorCallbacks::onRead(BLEDescriptor* pDescriptor) {
 void BLEDescriptorCallbacks::onWrite(BLEDescriptor* pDescriptor) {
 
 } // onWrite
+
+
+/**
+ * @brief Handle GATT server events for the descripttor.
+ * @param [in] event
+ * @param [in] gatts_if
+ * @param [in] param
+ */
+void BLEDescriptor::handleGATTServerEvent(
+		T_SERVER_ID service_id,
+	    void *p_datas) {
+
+} // handleGATTServerEvent

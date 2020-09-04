@@ -85,3 +85,19 @@ BLEDescriptor* BLEDescriptorMap::getNext() {
 	m_iterator++;
 	return pRet;
 } // getNext
+
+
+/**
+ * @breif Pass the GATT server event onwards to each of the descriptors found in the mapping
+ * @param [in] event
+ * @param [in] gatts_if
+ * @param [in] param
+ */
+void BLEDescriptorMap::handleGATTServerEvent(
+		T_SERVER_ID service_id,
+	    void *p_datas) {
+	// Invoke the handler for every descriptor we have.
+	for (auto &myPair : m_uuidMap) {
+		myPair.first->handleGATTServerEvent(service_id,p_datas);
+	}
+} // handleGATTServerEvent

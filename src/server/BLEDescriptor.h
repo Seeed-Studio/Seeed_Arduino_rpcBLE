@@ -12,7 +12,7 @@
 #include "BLEUUID.h"
 #include "BLECharacteristic.h"
 #include "BLEFreeRTOS.h"
-
+typedef uint8_t T_SERVER_ID;
 class BLEService;
 class BLECharacteristic;
 class BLEDescriptorCallbacks;
@@ -39,6 +39,7 @@ private:
 	BLECharacteristic*      m_pCharacteristic;
 	BLEDescriptorCallbacks* m_pCallback;
 
+    void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 	BLEFreeRTOS::Semaphore     m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 
 	void executeCreate(BLECharacteristic* pCharacteristic);
