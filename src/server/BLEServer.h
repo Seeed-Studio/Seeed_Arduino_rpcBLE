@@ -36,6 +36,7 @@ public:
 	BLEService* getByUUID(BLEUUID uuid, uint8_t inst_id = 0);
     void        setByUUID(BLEUUID uuid, BLEService* service);
     std::string toString();
+    void        handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 private:
     std::map<BLEService*, std::string> m_uuidMap;
     std::map<uint16_t, BLECharacteristic*> m_handleMap;

@@ -134,78 +134,7 @@ void BLEServer::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
  */
 void BLEServer::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
 
-#if 0
-	switch(event) {
-	
-		case ESP_GATTS_ADD_CHAR_EVT: {
-			break;
-		} // ESP_GATTS_ADD_CHAR_EVT
 
-		case ESP_GATTS_MTU_EVT:
-			updatePeerMTU(param->mtu.conn_id, param->mtu.mtu);
-			break;
-
-		case ESP_GATTS_CONNECT_EVT: {
-			m_connId = param->connect.conn_id;
-			addPeerDevice((void*)this, false, m_connId);
-			if (m_pServerCallbacks != nullptr) {
-				m_pServerCallbacks->onConnect(this);
-//				m_pServerCallbacks->onConnect(this, param);			
-			}
-			m_connectedCount++;   // Increment the number of connected devices count.	
-			break;
-		} // ESP_GATTS_CONNECT_EVT
-
-		case ESP_GATTS_CREATE_EVT: {
-			BLEService* pService = m_serviceMap.getByUUID(param->create.service_id.id.uuid, param->create.service_id.id.inst_id);  // <--- very big bug for multi services with the same uuid
-			m_serviceMap.setByHandle(param->create.service_handle, pService);
-			m_semaphoreCreateEvt.give();
-			break;
-		} // ESP_GATTS_CREATE_EVT
-
-
-		case ESP_GATTS_DISCONNECT_EVT: {
-			if (m_pServerCallbacks != nullptr) {         // If we have callbacks, call now.
-				m_pServerCallbacks->onDisconnect(this);
-			}
-            if(m_connId == ESP_GATT_IF_NONE) {
-                return;
-            }
-
-            // only decrement if connection is found in map and removed
-            // sometimes this event triggers w/o a valid connection
-			if(removePeerDevice(param->disconnect.conn_id, false)) {
-                m_connectedCount--;                          // Decrement the number of connected devices count.
-            }
-            break;
-		} // ESP_GATTS_DISCONNECT_EVT
-
-
-		//
-		case ESP_GATTS_READ_EVT: {
-			break;
-		} // ESP_GATTS_READ_EVT
-
-
-		case ESP_GATTS_REG_EVT: {
-			m_gatts_if = gatts_if;
-			m_semaphoreRegisterAppEvt.give(); // Unlock the mutex waiting for the registration of the app.
-			break;
-		} // ESP_GATTS_REG_EVT
-
-		//
-		case ESP_GATTS_WRITE_EVT: {
-			break;
-		}
-
-		case ESP_GATTS_OPEN_EVT:
-			m_semaphoreOpenEvt.give(param->open.status);
-			break;
-
-		default:
-			break;
-	}
 	// Invoke the handler for every Service we have.
-	m_serviceMap.handleGATTServerEvent(event, gatts_if, param);
-#endif
+	m_serviceMap.handleGATTServerEvent(service_id,p_datas);
 } // handleGATTServerEvent
