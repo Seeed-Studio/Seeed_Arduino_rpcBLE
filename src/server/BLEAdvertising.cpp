@@ -18,11 +18,13 @@
  */
 
 #include "BLEAdvertising.h"
+BLEAdvertising advdata;
 /**
  * @brief Construct a default advertising object.
  *
  */
 BLEAdvertising::BLEAdvertising() {
+#if 0
 	m_advData.set_scan_rsp        = false;
 	m_advData.include_name        = true;
 	m_advData.include_txpower     = true;
@@ -40,35 +42,96 @@ BLEAdvertising::BLEAdvertising() {
 
 	m_adv_int_min       = 0x20;
 	m_adv_int_max       = 0x40;
-#if 0
+
 	m_advParams.adv_type          = ADV_TYPE_IND;
 	m_advParams.own_addr_type     = BLE_ADDR_TYPE_PUBLIC;
 	m_advParams.channel_map       = ADV_CHNL_ALL;
 	m_advParams.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
 	m_advParams.peer_addr_type    = BLE_ADDR_TYPE_PUBLIC;
-#endif
+
 	m_customAdvData               = false;   // No custom advertising data
 	m_customScanResponseData      = false;   // No custom scan response data
+#endif
 } // BLEAdvertising
 
 
+void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_type type) {
+	if (type == adv_data)
+	{
+		if ((31 - _dataSize) < size) {
+        printf("Insufficient space in advertising data packet\r\n");
+        return;
+        }
+        int i;
+        for (i = 0; i < size; i++) {
+        _data[_dataSize] = data[i];
+        _dataSize++;
+        }
+	}else if (type == adv_scan_data)
+	{
+		if ((31 - scan_dataSize) < size) {
+        printf("Insufficient space in advertising data packet\r\n");
+        return;
+        }
+        int i;
+        for (i = 0; i < size; i++) {
+        sacn_data[scan_dataSize] = data[i];
+        scan_dataSize++;
+        }
+	}
+}
 
 /**
  * @brief Add a service uuid to exposed list of services.
  * @param [in] serviceUUID The UUID of the service to expose.
  */
 void BLEAdvertising::addServiceUUID(BLEUUID serviceUUID) {
-	m_serviceUUIDs.push_back(serviceUUID);
+//	m_serviceUUIDs.push_back(serviceUUID);
+    _serviceList[_serviceCount++] = (serviceUUID);
+    switch (uuid.length()) {
+        case 2: {
+            uint8_t data[4] = {3, GAP_ADTYPE_16BIT_COMPLETE};
+            memcpy(&(data[2]), uuid.dataNative(), 2);
+            addData(data, 4, adv_scan_data);
+            break;
+        }
+        case 4: {
+            uint8_t data[6] = {5, GAP_ADTYPE_32BIT_COMPLETE};
+            memcpy(&(data[2]), uuid.dataNative(), 4);
+            addData(data, 6, adv_scan_data);
+            break;
+        }
+        case 16: {
+            uint8_t data[18] = {17, GAP_ADTYPE_128BIT_COMPLETE};
+            memcpy(&(data[2]), uuid.dataNative(), 16);
+            addData(data, 18, adv_scan_data);
+            break;
+        }
+        default:
+            break;
+    }
+    return scan_dataSize;
+}   
 } // addServiceUUID
 
 
 void BLEAdvertising::setScanResponse(bool set) {
-	m_scanResp = set;
+//	m_scanResp = set;
+    if (set == true)
+	{
+		memcpy(_scanRspData, scan_data, scan_dataSize);
+        _scanRspDataSize = scan_dataSize;
+	}
 }
 
 void BLEAdvertising::setMinPreferred(uint16_t mininterval) {
-	m_advData.min_interval = mininterval;
+//	m_advData.min_interval = mininterval;
+    if ((mininterval >= 20) && (mininterval <= 10240)) {
+        _advIntMin = (mininterval*1000/625);
+    }
 } //
+
+
 
 
 
@@ -78,63 +141,43 @@ void BLEAdvertising::setMinPreferred(uint16_t mininterval) {
  * @return N/A.
  */
 void BLEAdvertising::start() {
-	int numServices = m_serviceUUIDs.size();
-	if (numServices > 0) {
-		m_advData.service_uuid_len = 16 * numServices;
-		m_advData.p_service_uuid = new uint8_t[m_advData.service_uuid_len];
-		uint8_t* p = m_advData.p_service_uuid;
-		for (int i = 0; i < numServices; i++) {
-			BLEUUID serviceUUID128 = m_serviceUUIDs[i].to128();
-			memcpy(p, serviceUUID128.getNative()->uuid.uuid128, 16);
-			p += 16;
-		}
-	} else {
-		m_advData.service_uuid_len = 0;
-	}
 
-	if (!m_customAdvData) {
-		// Set the configuration for advertising.
-		m_advData.set_scan_rsp = false;
-		m_advData.include_name = !m_scanResp;
-		m_advData.include_txpower = !m_scanResp;
+	advdata.addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
+	advdata.addCompleteName("SEEED_BLE_DEV");
+	advdata.setAdvData(advdata);
+#if 1
+	le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(_advEvtType), &(_advEvtType));
+    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(_advDirectType), &(_advDirectType));
+    le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(_advDirectAddr), (_advDirectAddr));
+    le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(_advChannMap), &(_advChannMap));
+    le_adv_set_param(GAP_PARAM_ADV_FILTER_POLICY, sizeof(_advFilterPolicy), &(_advFilterPolicy));
+    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(_advIntMin), &(_advIntMin));
+    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(_advIntMax), &(_advIntMax));
+    le_adv_set_param(GAP_PARAM_ADV_DATA, _advDataSize, _advData);
+    le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
 
-#if 0
-//*********************配置广播数据********************************************************************
-		errRc = ::esp_ble_gap_config_adv_data(&m_advData);
-		if (errRc != ESP_OK) {
-			log_e("<< esp_ble_gap_config_adv_data: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-			return;
-		}
-#endif 
-	}
+    le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(_slaveInitMtuReq), &_slaveInitMtuReq);
+#endif
 
-	if (!m_customScanResponseData && m_scanResp) {
-		m_advData.set_scan_rsp = true;
-		m_advData.include_name = m_scanResp;
-		m_advData.include_txpower = m_scanResp;
-#if 0
-		errRc = ::esp_ble_gap_config_adv_data(&m_advData);
-		if (errRc != ESP_OK) {
-			log_e("<< esp_ble_gap_config_adv_data (Scan response): rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-			return;
-		}
-#endif 
-	}
-
-	// If we had services to advertise then we previously allocated some storage for them.
-	// Here we release that storage.
-	if (m_advData.service_uuid_len > 0) {
-		delete[] m_advData.p_service_uuid;
-		m_advData.p_service_uuid = nullptr;
-	}
-
-#if 0
-	// *****************************Start advertising.*********************************************
-	errRc = ::esp_ble_gap_start_advertising(&m_advParams);
-	if (errRc != ESP_OK) {
-		log_e("<< esp_ble_gap_start_advertising: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-		return;
-	}
-	log_v("<< start");
-#endif 
+    
 } // start
+
+uint8_t BLEAdvertising::addFlags(uint8_t flags) {
+    uint8_t data[3] = {2, GAP_ADTYPE_FLAGS, flags};
+    addData(data, 3, adv_data);
+    return _dataSize;
+}
+
+uint8_t BLEAdvertising::addCompleteName(const char* str) {
+    _devName = String(str);
+    uint8_t length = _devName.length();
+    uint8_t data[(2 + length)] = {(uint8_t)(1 + length), GAP_ADTYPE_LOCAL_NAME_COMPLETE};
+    memcpy(&(data[2]), str, length);
+    addData(data, (2 + length), adv_data);
+    return _dataSize;
+}
+
+void BLEAdvertising::setAdvData(advdata) {
+    memcpy(_advData, adData._data, adData._dataSize);
+    _advDataSize = adData._dataSize;
+}

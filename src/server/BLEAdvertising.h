@@ -12,34 +12,11 @@
 #include "BLEFreeRTOS.h"
 
 
-typedef struct {
-    bool                    set_scan_rsp;           /*!< Set this advertising data as scan response or not*/
-    bool                    include_name;           /*!< Advertising data include device name or not */
-    bool                    include_txpower;        /*!< Advertising data include TX power */
-    int                     min_interval;           /*!< Advertising data show slave preferred connection min interval.
-                                                    The connection interval in the following manner:
-                                                    connIntervalmin = Conn_Interval_Min * 1.25 ms
-                                                    Conn_Interval_Min range: 0x0006 to 0x0C80
-                                                    Value of 0xFFFF indicates no specific minimum.
-                                                    Values not defined above are reserved for future use.*/
-
-    int                     max_interval;           /*!< Advertising data show slave preferred connection max interval.
-                                                    The connection interval in the following manner:
-                                                    connIntervalmax = Conn_Interval_Max * 1.25 ms
-                                                    Conn_Interval_Max range: 0x0006 to 0x0C80
-                                                    Conn_Interval_Max shall be equal to or greater than the Conn_Interval_Min.
-                                                    Value of 0xFFFF indicates no specific maximum.
-                                                    Values not defined above are reserved for future use.*/
-
-    int                     appearance;             /*!< External appearance of device */
-    uint16_t                manufacturer_len;       /*!< Manufacturer data length */
-    uint8_t                 *p_manufacturer_data;   /*!< Manufacturer data point */
-    uint16_t                service_data_len;       /*!< Service data length */
-    uint8_t                 *p_service_data;        /*!< Service data point */
-    uint16_t                service_uuid_len;       /*!< Service uuid length */
-    uint8_t                 *p_service_uuid;        /*!< Service uuid array point */
-    uint8_t                 flag;                   /*!< Advertising flag of discovery mode, see BLE_ADV_DATA_FLAG detail */
-} ble_adv_data_t;
+/// Advertising data type
+typedef enum {
+    adv_data,
+    adv_scan_data,
+} ble_adv_data_type;
 
 
 
@@ -69,14 +46,59 @@ public:
 	void setScanResponse(bool);
     void setMinPreferred(uint16_t);
 
+    void addData(const uint8_t* data, uint8_t size,ble_adv_data_type type);
+
 private:
+#if 0
     ble_adv_data_t       m_advData;
 	uint16_t             m_adv_int_min;
 	uint16_t             m_adv_int_max;
 	bool                 m_customAdvData = false;  // Are we using custom advertising data?
 	bool                 m_customScanResponseData      = false;   // No custom scan response data
     bool				 m_scanResp = true;
+#endif
+
+    uint8_t addFlags(uint8_t flags);
+    uint8_t addCompleteName(const char* str);
+    void setAdvData(BLEAdvertising adData);
+
+    uint8_t _data[31] ={0};     // array for storing formatted advertising data for receiving and sending
+    uint8_t _dataSize = 0;
+
+    uint8_t scan_data[31] ={0};     // array for storing formatted advertising data for receiving and sending
+    uint8_t scan_dataSize = 0;
+
+    uint8_t     _serviceCount = 0;
+    BLEUUID     _serviceList[7];
 	std::vector<BLEUUID> m_serviceUUIDs;
+    uint16_t _advIntMin = 320;   // Minimum advertising interval for undirected and low duty cycle directed advertising. Value range: 0x0020 - 0x4000 (20ms - 10240ms)(0.625ms/step)
+    uint16_t _advIntMax = 480;  // Maximum advertising interval for undirected and low duty cycle directed advertising. Value range: 0x0020 - 0x4000 (20ms - 10240ms)(0.625ms/step)
+    uint8_t  _slaveInitMtuReq = false;
+    uint8_t  _advEvtType = GAP_ADTYPE_ADV_IND;
+    uint8_t  _advDirectType = GAP_REMOTE_ADDR_LE_PUBLIC;
+    uint8_t  _advDirectAddr[GAP_BD_ADDR_LEN] = {0};
+    uint8_t  _advChannMap = GAP_ADVCHAN_ALL;
+    uint8_t  _advFilterPolicy = GAP_ADV_FILTER_ANY;
+  
+    uint8_t _scanRspData[31] = {
+                                    0x03,                             /* length */
+                                    GAP_ADTYPE_APPEARANCE,            /* type="Appearance" */
+                                    LO_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
+                                    HI_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
+                                    };
+    uint8_t  _advDataSize = 18;
+    uint8_t  _scanRspDataSize = 4;   
+
+    uint8_t _advData[31] = {
+                                    /* Flags */
+                                    0x02,             /* length */
+                                    GAP_ADTYPE_FLAGS, /* type="Flags" */
+                                    GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+                                    /* Local name */
+                                    0x0E,             /* length */
+                                    GAP_ADTYPE_LOCAL_NAME_COMPLETE,
+                                    'S', 'E', 'E', 'E', 'D', '_', 'B', 'L', 'E', '_', 'D', 'E', 'V',
+                                    };
 	
 };
 #endif /* COMPONENTS_CPP_UTILS_BLEADVERTISING_H_ */
