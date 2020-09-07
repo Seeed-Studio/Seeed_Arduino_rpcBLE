@@ -37,6 +37,16 @@ void BLEServiceMap::setByUUID(BLEUUID uuid, BLEService* service) {
 } // setByUUID
 
 
+/**
+ * @brief Set the service by handle.
+ * @param [in] handle The handle of the service.
+ * @param [in] service The service to cache.
+ * @return N/A.
+ */
+void BLEServiceMap::setByHandle(uint16_t handle, BLEService* service) {
+	m_handleMap.insert(std::pair<uint16_t, BLEService*>(handle, service));
+} // setByHandle
+
 
 
 /**
