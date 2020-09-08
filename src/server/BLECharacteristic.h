@@ -26,15 +26,18 @@ class BLECharacteristicCallbacks;
 class BLEDescriptorMap {
 public:
     void setByUUID(BLEUUID uuid, BLEDescriptor* pDescriptor);
+	void setByHandle(uint16_t handle, BLEDescriptor* pDescriptor);
 	BLEDescriptor* getByUUID(BLEUUID uuid);
 	BLEDescriptor* getFirst();
 	BLEDescriptor* getNext();
+	BLEDescriptor* getByHandle(uint16_t handle);
 	std::string	toString();
 	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 
 
 private:
 	std::map<BLEDescriptor*, std::string> m_uuidMap;
+	std::map<uint16_t, BLEDescriptor*> m_handleMap;
     std::map<BLEDescriptor*, std::string>::iterator m_iterator;
 };
 

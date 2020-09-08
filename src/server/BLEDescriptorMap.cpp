@@ -41,23 +41,14 @@ void BLEDescriptorMap::setByUUID(BLEUUID uuid, BLEDescriptor* pDescriptor) {
 
 
 /**
- * @brief Return a string representation of the descriptor map.
- * @return A string representation of the descriptor map.
+ * @brief Set the descriptor by handle.
+ * @param [in] handle The handle of the descriptor.
+ * @param [in] descriptor The descriptor to cache.
+ * @return N/A.
  */
-std::string BLEDescriptorMap::toString() {
-	std::string res;
-	char hex[5];
-	int count = 0;
-	for (auto &myPair : m_uuidMap) {
-		if (count > 0) {res += "\n";}
-		snprintf(hex, sizeof(hex), "%04x", myPair.first->getHandle());
-		count++;
-		res += "handle: 0x";
-		res += hex;
-		res += ", uuid: " + myPair.first->getUUID().toString();
-	}
-	return res;
-} // toString
+void BLEDescriptorMap::setByHandle(uint16_t handle, BLEDescriptor* pDescriptor) {
+	m_handleMap.insert(std::pair<uint16_t, BLEDescriptor*>(handle, pDescriptor));
+} // setByHandle
 
 
 
@@ -87,6 +78,18 @@ BLEDescriptor* BLEDescriptorMap::getNext() {
 } // getNext
 
 
+
+/**
+ * @brief Return the descriptor by handle.
+ * @param [in] handle The handle to look up the descriptor.
+ * @return The descriptor.
+ */
+BLEDescriptor* BLEDescriptorMap::getByHandle(uint16_t handle) {
+	return m_handleMap.at(handle);
+} // getByHandle
+
+
+
 /**
  * @breif Pass the GATT server event onwards to each of the descriptors found in the mapping
  * @param [in] event
@@ -101,3 +104,23 @@ void BLEDescriptorMap::handleGATTServerEvent(
 		myPair.first->handleGATTServerEvent(service_id,p_datas);
 	}
 } // handleGATTServerEvent
+
+
+/**
+ * @brief Return a string representation of the descriptor map.
+ * @return A string representation of the descriptor map.
+ */
+std::string BLEDescriptorMap::toString() {
+	std::string res;
+	char hex[5];
+	int count = 0;
+	for (auto &myPair : m_uuidMap) {
+		if (count > 0) {res += "\n";}
+		snprintf(hex, sizeof(hex), "%04x", myPair.first->getHandle());
+		count++;
+		res += "handle: 0x";
+		res += hex;
+		res += ", uuid: " + myPair.first->getUUID().toString();
+	}
+	return res;
+} // toString
