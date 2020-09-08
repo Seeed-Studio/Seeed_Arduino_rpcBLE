@@ -10,6 +10,7 @@
 #include "BLEUUID.h"
 #include <vector>
 #include "BLEFreeRTOS.h"
+#include "Seeed_erpcUnified.h"
 
 
 /// Advertising data type
@@ -42,31 +43,23 @@ class BLEAdvertising {
 public:
 	BLEAdvertising();
 	void start();
-	void addServiceUUID(BLEUUID serviceUUID);
+	uint8_t addServiceUUID(BLEUUID serviceUUID);
 	void setScanResponse(bool);
     void setMinPreferred(uint16_t);
+    uint8_t addCompleteName(const char* str);
+    uint8_t addShortName(const char* str);
+    uint8_t addFlags(uint8_t flags);
+    void setAdvData();
 
     void addData(const uint8_t* data, uint8_t size,ble_adv_data_type type);
-
-private:
-#if 0
-    ble_adv_data_t       m_advData;
-	uint16_t             m_adv_int_min;
-	uint16_t             m_adv_int_max;
-	bool                 m_customAdvData = false;  // Are we using custom advertising data?
-	bool                 m_customScanResponseData      = false;   // No custom scan response data
-    bool				 m_scanResp = true;
-#endif
-
-    uint8_t addFlags(uint8_t flags);
-    uint8_t addCompleteName(const char* str);
-    void setAdvData(BLEAdvertising adData);
-
+    
+private:   
     uint8_t _data[31] ={0};     // array for storing formatted advertising data for receiving and sending
     uint8_t _dataSize = 0;
 
     uint8_t scan_data[31] ={0};     // array for storing formatted advertising data for receiving and sending
     uint8_t scan_dataSize = 0;
+    String      _devName;
 
     uint8_t     _serviceCount = 0;
     BLEUUID     _serviceList[7];

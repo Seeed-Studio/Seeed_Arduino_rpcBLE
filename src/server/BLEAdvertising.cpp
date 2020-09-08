@@ -18,7 +18,7 @@
  */
 
 #include "BLEAdvertising.h"
-BLEAdvertising advdata;
+
 /**
  * @brief Construct a default advertising object.
  *
@@ -75,7 +75,7 @@ void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_typ
         }
         int i;
         for (i = 0; i < size; i++) {
-        sacn_data[scan_dataSize] = data[i];
+        scan_data[scan_dataSize] = data[i];
         scan_dataSize++;
         }
 	}
@@ -85,33 +85,32 @@ void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_typ
  * @brief Add a service uuid to exposed list of services.
  * @param [in] serviceUUID The UUID of the service to expose.
  */
-void BLEAdvertising::addServiceUUID(BLEUUID serviceUUID) {
+uint8_t BLEAdvertising::addServiceUUID(BLEUUID serviceUUID) {
 //	m_serviceUUIDs.push_back(serviceUUID);
     _serviceList[_serviceCount++] = (serviceUUID);
-    switch (uuid.length()) {
+    switch (serviceUUID.length()) {
         case 2: {
             uint8_t data[4] = {3, GAP_ADTYPE_16BIT_COMPLETE};
-            memcpy(&(data[2]), uuid.dataNative(), 2);
+            memcpy(&(data[2]), serviceUUID.dataNative(), 2);
             addData(data, 4, adv_scan_data);
             break;
         }
         case 4: {
             uint8_t data[6] = {5, GAP_ADTYPE_32BIT_COMPLETE};
-            memcpy(&(data[2]), uuid.dataNative(), 4);
+            memcpy(&(data[2]), serviceUUID.dataNative(), 4);
             addData(data, 6, adv_scan_data);
             break;
         }
         case 16: {
             uint8_t data[18] = {17, GAP_ADTYPE_128BIT_COMPLETE};
-            memcpy(&(data[2]), uuid.dataNative(), 16);
+            memcpy(&(data[2]), serviceUUID.dataNative(), 16);
             addData(data, 18, adv_scan_data);
             break;
         }
         default:
             break;
     }
-    return scan_dataSize;
-}   
+    return scan_dataSize;   
 } // addServiceUUID
 
 
@@ -142,9 +141,9 @@ void BLEAdvertising::setMinPreferred(uint16_t mininterval) {
  */
 void BLEAdvertising::start() {
 
-	advdata.addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
-	advdata.addCompleteName("SEEED_BLE_DEV");
-	advdata.setAdvData(advdata);
+	addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
+	addCompleteName("SEEED_BLE_DEV");
+	setAdvData();
 #if 1
 	le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(_advEvtType), &(_advEvtType));
     le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(_advDirectType), &(_advDirectType));
@@ -158,7 +157,7 @@ void BLEAdvertising::start() {
 
     le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(_slaveInitMtuReq), &_slaveInitMtuReq);
 #endif
-
+    le_adv_start();
     
 } // start
 
@@ -177,7 +176,17 @@ uint8_t BLEAdvertising::addCompleteName(const char* str) {
     return _dataSize;
 }
 
-void BLEAdvertising::setAdvData(advdata) {
-    memcpy(_advData, adData._data, adData._dataSize);
-    _advDataSize = adData._dataSize;
+
+uint8_t BLEAdvertising::addShortName(const char* str) {
+    _devName = String(str);
+    uint8_t length = _devName.length();
+    uint8_t data[(2 + length)] = {(uint8_t)(1 + length), GAP_ADTYPE_LOCAL_NAME_SHORT};
+    memcpy(&(data[2]), str, length);
+    addData(data, (2 + length), adv_data);
+    return _dataSize;
+}
+
+void BLEAdvertising::setAdvData() {
+    memcpy(_advData, _data, _dataSize);
+    _advDataSize = _dataSize;
 }
