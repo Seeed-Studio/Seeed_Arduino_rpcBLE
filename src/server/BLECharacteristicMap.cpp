@@ -20,6 +20,26 @@ void BLECharacteristicMap::setByUUID(BLECharacteristic* pCharacteristic, BLEUUID
 } // setByUUID
 
 
+/**
+ * @brief Set the characteristic by handle.
+ * @param [in] handle The handle of the characteristic.
+ * @param [in] characteristic The characteristic to cache.
+ * @return N/A.
+ */
+void BLECharacteristicMap::setByHandle(uint16_t handle, BLECharacteristic* characteristic) {
+	m_handleMap.insert(std::pair<uint16_t, BLECharacteristic*>(handle, characteristic));
+} // setByHandle
+
+
+
+/**
+ * @brief Return the characteristic by handle.
+ * @param [in] handle The handle to look up the characteristic.
+ * @return The characteristic.
+ */
+BLECharacteristic* BLECharacteristicMap::getByHandle(uint16_t handle) {
+	return m_handleMap.at(handle);
+} // getByHandle
 
 /**
  * @brief Return the characteristic by UUID.
@@ -72,3 +92,6 @@ void BLECharacteristicMap::handleGATTServerEvent(T_SERVER_ID service_id, void *p
 		myPair.first->handleGATTServerEvent(service_id,p_datas);
 	}
 } // handleGATTServerEvent
+
+
+

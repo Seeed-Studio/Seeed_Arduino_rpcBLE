@@ -22,14 +22,18 @@ class BLEServer;
 class BLECharacteristicMap {
 public:
     void setByUUID(BLECharacteristic* pCharacteristic, BLEUUID uuid);
+	void setByHandle(uint16_t handle, BLECharacteristic* pCharacteristic);
 	BLECharacteristic* getByUUID(BLEUUID uuid);
 	BLECharacteristic* getFirst();
 	BLECharacteristic* getNext();
+    BLECharacteristic* getByHandle(uint16_t handle);
     void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 
 private:
 	std::map<BLECharacteristic*, std::string> m_uuidMap;
+	std::map<uint16_t, BLECharacteristic*> m_handleMap;
 	std::map<BLECharacteristic*, std::string>::iterator m_iterator;
+
 
 };
 
