@@ -34,13 +34,17 @@ typedef struct {
 class BLEServiceMap {
 public:	
 	BLEService* getByUUID(BLEUUID uuid, uint8_t inst_id = 0);
+    BLEService* getByHandle(uint16_t handle);
     void        setByUUID(BLEUUID uuid, BLEService* service);
     void        setByHandle(uint16_t handle, BLEService* service);
+    BLEService* getFirst();
+    BLEService* getNext();
     std::string toString();
     void        handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 private:
     std::map<BLEService*, std::string> m_uuidMap;
-    std::map<uint16_t, BLECharacteristic*> m_handleMap;
+    std::map<uint16_t, BLEService*>    m_handleMap;
+    std::map<BLEService*, std::string>::iterator m_iterator;
 
 };
 

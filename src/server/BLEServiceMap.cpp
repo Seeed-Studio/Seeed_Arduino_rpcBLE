@@ -27,6 +27,36 @@ BLEService* BLEServiceMap::getByUUID(BLEUUID uuid, uint8_t inst_id) {
 
 
 /**
+ * @brief Return the service by handle.
+ * @param [in] handle The handle to look up the service.
+ * @return The service.
+ */
+BLEService* BLEServiceMap::getByHandle(uint16_t handle) {
+	return m_handleMap.at(handle);
+} // getByHandle
+
+BLEService* BLEServiceMap::getFirst() {
+	m_iterator = m_uuidMap.begin();
+	if (m_iterator == m_uuidMap.end()) return nullptr;
+	BLEService* pRet = m_iterator->first;
+	m_iterator++;
+	return pRet;
+} // getFirst
+
+
+/**
+ * @brief Get the next service in the map.
+ * @return The next service in the map.
+ */
+BLEService* BLEServiceMap::getNext() {
+	if (m_iterator == m_uuidMap.end()) return nullptr;
+	BLEService* pRet = m_iterator->first;
+	m_iterator++;
+	return pRet;
+} // getNext
+
+
+/**
  * @brief Set the service by UUID.
  * @param [in] uuid The uuid of the service.
  * @param [in] characteristic The service to cache.
