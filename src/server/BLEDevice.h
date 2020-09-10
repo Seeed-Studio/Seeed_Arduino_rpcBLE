@@ -46,6 +46,7 @@ private:
 	static void ble_handle_gap_msg(T_IO_MSG *p_gap_msg);
 
 
+
 //*********************ble server eventhandler*****************************************************
 	static void gattServerEventHandler(T_SERVER_ID service_id, void *p_datas);
 };

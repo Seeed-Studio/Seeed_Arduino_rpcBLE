@@ -25,11 +25,11 @@ void ble_dev_state_evt_handler(T_GAP_DEV_STATE new_state, uint16_t cause);
 void ble_param_update_evt_handler(uint8_t conn_id, uint8_t status, uint16_t cause);
 void ble_mtu_info_evt_handler(uint8_t conn_id, uint16_t mtu_size);
 void ble_authen_state_evt_handler(uint8_t conn_id, uint8_t new_state, uint16_t cause);
+
 T_GAP_DEV_STATE ble_gap_dev_state = {0, 0, 0, 0, 0}; /**< GAP device state */
 T_GAP_CONN_STATE ble_gap_conn_state = GAP_CONN_STATE_DISCONNECTED;
-T_APP_LINK ble_clinet_link_table[BLE_CLIENT_MAX_LINKS];
-RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:client
-
+T_APP_LINK ble_clinet_link_table[BLE_LE_MAX_LINKS];
+RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_SLAVE; // 0:close 1:server 2:client
 
 /**
  * @brief Create a new instance of a server.
@@ -37,7 +37,8 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_MASTER; // 0:close 1:server 2:cl
  */
 /* STATIC */ BLEServer* BLEDevice::createServer() {
 	m_pServer = new BLEServer();
-	m_pServer->createApp(m_appId++);
+//	m_pServer->createApp(m_appId++);
+    Serial.printf("BLE create Server\n\r"); 
 	return m_pServer;
 } // createServer
 
@@ -87,8 +88,9 @@ void BLEDevice::startAdvertising() {
 	/*
 	 * Bluetooth controller initialization
 	 */
-	rpc_ble_init();
-  
+    ble_init();
+    ble_server_init(BLE_SERVER_MAX_APPS);
+    ble_client_init(BLE_CLIENT_MAX_APPS);
   
     /*
      *  Register the Bluetooth callback function
@@ -96,9 +98,11 @@ void BLEDevice::startAdvertising() {
     le_register_app_cb(BLEDevice::gapEventHandler);
     le_register_msg_handler(BLEDevice::ble_handle_gap_msg);
     le_register_gattc_cb(BLEDevice::gattClientEventHandler);
+    
+    
 
     //************注册server的回调函数****************************************************************
-    //esp_ble_gatts_register_callback(BLEDevice::gattServerEventHandler);
+   // esp_ble_gatts_register_callback(BLEDevice::gattServerEventHandler);
 
     /*
      * Set Bluetooth device  name
@@ -106,14 +110,14 @@ void BLEDevice::startAdvertising() {
     uint8_t  device_name[GAP_DEVICE_NAME_LEN] = {0};
     memcpy(device_name,deviceName.c_str(),GAP_DEVICE_NAME_LEN);
     le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN,device_name);
-
+  
 	/*
      * Activate the Bluetooth controller
      */
-	rpc_ble_start();
-    Serial.printf("BLEDevice::init End...................");
+	//ble_start();
 	}
-	
+    Serial.printf("BLE init success\n\r");
+	return;
 } // init
 
 /**
@@ -318,7 +322,7 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
     if (ble_dev_role == RPC_GAP_LINK_ROLE_MASTER)
     {
 
-        if (conn_id >= BLE_CLIENT_MAX_LINKS)
+        if (conn_id >= BLE_LE_MAX_LINKS)
         {
             return;
         }
