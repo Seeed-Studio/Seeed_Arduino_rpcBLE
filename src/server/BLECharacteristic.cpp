@@ -37,18 +37,57 @@ BLECharacteristic::BLECharacteristic(BLEUUID uuid, uint32_t properties) {
 
 
 /**
+ * @brief Create a new BLE Characteristic associated with this service.
+ * @param [in] uuid - The UUID of the characteristic.
+ * @param [in] properties - The properties of the characteristic.
+ * @return The new BLE characteristic.
+ */
+BLEDescriptor* BLECharacteristic::createDescriptor(const char* uuid, uint16_t flags,uint32_t permissions,uint16_t max_len) {
+	return createDescriptor(BLEUUID(uuid), flags, permissions, max_len);
+}
+/**
+ * @brief Create a new BLE Characteristic associated with this service.
+ * @param [in] uuid - The UUID of the characteristic.
+ * @param [in] properties - The properties of the characteristic.
+ * @return The new BLE characteristic.
+ */
+BLEDescriptor* BLECharacteristic::createDescriptor(BLEUUID uuid,uint16_t flags,uint32_t permissions,uint16_t max_len) {
+	Serial.printf("createDescriptor start\n\r");
+	BLEDescriptor* pDescriptor = new BLEDescriptor(uuid,flags,permissions,max_len);
+	addDescriptor(pDescriptor);
+	Serial.printf("createDescriptor end\n\r");
+	return pDescriptor;
+} // createCharacteristic
+
+
+/**
+ * @brief Associate a descriptor with this characteristic.
+ * @param [in] pDescriptor
+ * @return N/A.
+ */
+void BLECharacteristic::addDescriptor(BLEDescriptor* pDescriptor) {
+	m_descriptorMap.setByUUID(pDescriptor->getUUID(), pDescriptor);
+} // addDescriptor
+
+
+BLEDescriptor* BLECharacteristic::getDescriptorByUUID(BLEUUID descriptorUUID) {
+	return m_descriptorMap.getByUUID(descriptorUUID);
+} // getDescriptorByUUID
+
+
+/**
  * @brief Set the permission to broadcast.
  * A characteristics has properties associated with it which define what it is capable of doing.
  * One of these is the broadcast flag.
  * @param [in] value The flag value of the property.
- * @return N/A
+ * @return N/A 
  */
 void BLECharacteristic::setBroadcastProperty(bool value) {
-#if 0	
+#if 1	
 	if (value) {
-		m_properties = (uint8_t)(m_properties | ESP_GATT_CHAR_PROP_BIT_BROADCAST);
+		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_BROADCAST);
 	} else {
-		m_properties = (uint8_t)(m_properties & ~ESP_GATT_CHAR_PROP_BIT_BROADCAST);
+		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_BROADCAST);
 	}
 #endif 
 } // setBroadcastProperty
@@ -59,11 +98,11 @@ void BLECharacteristic::setBroadcastProperty(bool value) {
  * @param [in] value Set to true if we are to allow reads.
  */
 void BLECharacteristic::setReadProperty(bool value) {
-#if 0
+#if 1
 	if (value) {
-		m_properties = (esp_gatt_char_prop_t)(m_properties | ESP_GATT_CHAR_PROP_BIT_READ);
+		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_READ);
 	} else {
-		m_properties = (esp_gatt_char_prop_t)(m_properties & ~ESP_GATT_CHAR_PROP_BIT_READ);
+		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_READ);
 	}
 #endif 
 } // setReadProperty
@@ -74,11 +113,11 @@ void BLECharacteristic::setReadProperty(bool value) {
  * @param [in] value Set to true if we are to allow writes.
  */
 void BLECharacteristic::setWriteProperty(bool value) {
-#if 0
+#if 1
 	if (value) {
-		m_properties = (esp_gatt_char_prop_t)(m_properties | ESP_GATT_CHAR_PROP_BIT_WRITE);
+		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_WRITE);
 	} else {
-		m_properties = (esp_gatt_char_prop_t)(m_properties & ~ESP_GATT_CHAR_PROP_BIT_WRITE);
+		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_WRITE);
 	}
 #endif
 } // setWriteProperty
@@ -89,11 +128,11 @@ void BLECharacteristic::setWriteProperty(bool value) {
  * @param [in] value Set to true if we are to allow notification messages.
  */
 void BLECharacteristic::setNotifyProperty(bool value) {
-#if 0
+#if 1
 	if (value) {
-		m_properties = (esp_gatt_char_prop_t)(m_properties | ESP_GATT_CHAR_PROP_BIT_NOTIFY);
+		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_NOTIFY);
 	} else {
-		m_properties = (esp_gatt_char_prop_t)(m_properties & ~ESP_GATT_CHAR_PROP_BIT_NOTIFY);
+		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_NOTIFY);
 	}
 #endif
 } // setNotifyProperty
@@ -104,11 +143,11 @@ void BLECharacteristic::setNotifyProperty(bool value) {
  * @param [in] value Set to true if we are to allow indicate messages.
  */
 void BLECharacteristic::setIndicateProperty(bool value) {
-#if 0
+#if 1
 	if (value) {
-		m_properties = (esp_gatt_char_prop_t)(m_properties | ESP_GATT_CHAR_PROP_BIT_INDICATE);
+		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_INDICATE);
 	} else {
-		m_properties = (esp_gatt_char_prop_t)(m_properties & ~ESP_GATT_CHAR_PROP_BIT_INDICATE);
+		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_INDICATE);
 	}
 #endif
 } // setIndicateProperty
@@ -119,16 +158,19 @@ void BLECharacteristic::setIndicateProperty(bool value) {
  * @param [in] value Set to true if we are to allow writes with no response.
  */
 void BLECharacteristic::setWriteNoResponseProperty(bool value) {
-#if 0
+#if 1
 	if (value) {
-		m_properties = (esp_gatt_char_prop_t)(m_properties | ESP_GATT_CHAR_PROP_BIT_WRITE_NR);
+		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_WRITE_NO_RSP);
 	} else {
-		m_properties = (esp_gatt_char_prop_t)(m_properties & ~ESP_GATT_CHAR_PROP_BIT_WRITE_NR);
+		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_WRITE_NO_RSP);
 	}
 #endif
 } // setWriteNoResponseProperty
 
 
+void BLECharacteristic::setAccessPermissions(uint32_t perm) {
+	m_permissions = perm;
+}
 
 /**
  * @brief Set the value of the characteristic from string data.
@@ -162,6 +204,22 @@ BLEUUID BLECharacteristic::getUUID() {
 } // getUUID
 
 
+uint8_t BLECharacteristic::getProperties() {
+	return m_properties;
+} // getProperties
+
+uint32_t BLECharacteristic::getAccessPermissions() {
+	return m_permissions;
+}
+
+
+BLEService* BLECharacteristic::getService() {
+	return m_pService;
+}
+
+uint8_t BLECharacteristic::getHandle() {
+	return m_handle;
+}
 
 /**
  * @brief Register a new characteristic with the ESP runtime.
@@ -169,17 +227,17 @@ BLEUUID BLECharacteristic::getUUID() {
  */
 void BLECharacteristic::executeCreate(BLEService* pService) {
 
-	if (m_handle != NULL_HANDLE) {
-		return;
-	}
+//	if (m_handle != NULL_HANDLE) {
+//		return;
+//	}
 
 	m_pService = pService; // Save the service to which this characteristic belongs.
 
-
+    setAccessPermissions(GATT_PERM_READ);
 //	esp_attr_control_t control;
 //	control.auto_rsp = ESP_GATT_RSP_BY_APP;
 
-	m_semaphoreCreateEvt.take("executeCreate");
+//	m_semaphoreCreateEvt.take("executeCreate");
 #if 0
 	esp_err_t errRc = ::esp_ble_gatts_add_char(
 		m_pService->getHandle(),
@@ -194,8 +252,17 @@ void BLECharacteristic::executeCreate(BLEService* pService) {
 		return;
 	}
 #endif
-	m_semaphoreCreateEvt.wait("executeCreate");
-
+//	m_semaphoreCreateEvt.wait("executeCreate");
+    ble_char_t CHAR;
+	CHAR.uuid_length = getUUID().getNative()->len;
+	Serial.printf("BLECharacteristic  executeCreate start\n\r");
+	memcpy(&(CHAR.uuid), &(getUUID().getNative()->uuid), CHAR.uuid_length);
+	Serial.printf("BLECharacteristic  executeCreate end\n\r");
+	CHAR.properties = getProperties();
+	CHAR.permissions = getAccessPermissions();
+	uint8_t char_handle1 = ble_create_char(m_pService->getgiff(), CHAR);
+    m_handle = char_handle1;
+	Serial.printf("BLECharacteristic  executeCreate end\n\r");
 	BLEDescriptor* pDescriptor = m_descriptorMap.getFirst();
 	while (pDescriptor != nullptr) {
 		pDescriptor->executeCreate(this);

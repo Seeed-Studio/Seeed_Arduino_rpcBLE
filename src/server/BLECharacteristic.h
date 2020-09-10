@@ -61,9 +61,16 @@ public:
 	void setValue(std::string value);
 	void setValue(uint8_t* data, size_t size);
 
+	void setAccessPermissions(uint32_t perm);
+
+	BLEDescriptor* createDescriptor(BLEUUID uuid,uint16_t flags,uint32_t permissions,uint16_t max_len);
+	BLEDescriptor* createDescriptor(const char* uuid, uint16_t flags,uint32_t permissions,uint16_t max_len);
+	void           addDescriptor(BLEDescriptor* pDescriptor);
+	BLEDescriptor* getDescriptorByUUID(BLEUUID descriptorUUID);
+	
+	BLEService*    getService();
+
 	BLEUUID        getUUID();
-
-
 
 	static const uint32_t PROPERTY_READ      = 1<<0;
 	static const uint32_t PROPERTY_WRITE     = 1<<1;
@@ -79,8 +86,9 @@ private:
 	friend class BLEDescriptor;
 
     BLEUUID                     m_bleUUID;
-	uint16_t                    m_handle;
+	uint8_t                     m_handle;
     uint8_t                     m_properties;
+	uint32_t                    m_permissions;
     BLECharacteristicCallbacks* m_pCallbacks;
 
 	BLEValue                    m_value;
@@ -88,6 +96,9 @@ private:
 	BLEDescriptorMap            m_descriptorMap;
 
     void                 executeCreate(BLEService* pService);
+	uint8_t              getProperties();
+	uint32_t             getAccessPermissions();
+	uint8_t             getHandle();
 	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 	BLEFreeRTOS::Semaphore m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 	BLEFreeRTOS::Semaphore m_semaphoreSetValue  = BLEFreeRTOS::Semaphore("SetValue"); 
