@@ -12,6 +12,8 @@
 #include "BLEUUID.h"
 #include "BLECharacteristic.h"
 #include "BLEFreeRTOS.h"
+#include "Seeed_erpcUnified.h"
+
 typedef uint8_t T_SERVER_ID;
 class BLEService;
 class BLECharacteristic;
@@ -22,27 +24,33 @@ class BLEDescriptorCallbacks;
  */
 class BLEDescriptor {
 public:
-    BLEDescriptor(BLEUUID uuid, uint16_t max_len = 100);
+    BLEDescriptor(BLEUUID uuid,uint16_t flags,uint32_t permissions,uint16_t max_len);
 	virtual ~BLEDescriptor();
     BLEUUID  getUUID();
     uint16_t getHandle();
-
 private:
 	friend class BLEDescriptorMap;
 	friend class BLECharacteristic;
 
-    BLEUUID                 m_bleUUID;
-	uint16_t                m_handle;
+    BLEUUID                m_bleUUID;
+	uint8_t                 m_handle;
 	uint16_t                m_attr_len;
 	uint16_t                m_attr_max_len;
 	uint8_t*                m_attr_value;
 	BLECharacteristic*      m_pCharacteristic;
 	BLEDescriptorCallbacks* m_pCallback;
 
+    uint16_t                m_flags;
+	uint32_t                m_permissions;
+
     void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
 	BLEFreeRTOS::Semaphore     m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 
 	void executeCreate(BLECharacteristic* pCharacteristic);
+    uint16_t getflags();
+	uint8_t* getattrvalue();
+	uint16_t getmaxlen();
+	uint32_t getpermissions();
 
 }; // BLEDescriptor
 
