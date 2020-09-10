@@ -54,7 +54,7 @@ bool BLEClient::connect(BLEAdvertisedDevice* device) {
  * client initialization
  */
     ble_client_init(BLE_CLIENT_MAX_APPS);
-    T_CLIENT_ID client_id = ble_add_client(0, BLE_CLIENT_MAX_LINKS);
+    T_CLIENT_ID client_id = ble_add_client(0, BLE_LE_MAX_LINKS);
 	m_gattc_if = client_id;
 
 	BLEAddress address =  device->getAddress();
