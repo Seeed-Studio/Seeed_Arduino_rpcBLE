@@ -45,10 +45,13 @@ private:
 class BLEService {
 public:
     void               addCharacteristic(BLECharacteristic* pCharacteristic);
-	BLEUUID            getUUID();
+    BLEUUID            getUUID();
 	uint16_t           getHandle();
+	BLEServer*         getServer();
+	uint8_t            getgiff();
 	void               executeCreate(BLEServer* pServer);
 	BLECharacteristic* createCharacteristic(BLEUUID uuid, uint32_t properties);
+	BLECharacteristic* createCharacteristic(const char* uuid, uint32_t properties);
 	void               start();
 	std::string toString();
 	uint8_t			   m_instId = 0;
@@ -64,6 +67,8 @@ private:
 	BLECharacteristic*   m_lastCreatedCharacteristic = nullptr;
 	BLEServer*           m_pServer = nullptr;
 	uint16_t             m_numHandles;
+
+	uint8_t             m_giff;
 
     BLECharacteristicMap m_characteristicMap;
 	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
