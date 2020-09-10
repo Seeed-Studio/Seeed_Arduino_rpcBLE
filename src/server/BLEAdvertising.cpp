@@ -81,6 +81,18 @@ void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_typ
 	}
 }
 
+
+/**
+ * @brief Add a service uuid to exposed list of services.
+ * @param [in] serviceUUID The string representation of the service to expose.
+ */
+void BLEAdvertising::addServiceUUID(const char* serviceUUID) {
+	BLEUUID bbb = BLEUUID(serviceUUID);
+	Serial.printf("service uuid: \n\r");
+	Serial.println(bbb.toString().c_str());
+	addServiceUUID(BLEUUID(serviceUUID));
+} // addServiceUUID
+
 /**
  * @brief Add a service uuid to exposed list of services.
  * @param [in] serviceUUID The UUID of the service to expose.
@@ -88,28 +100,38 @@ void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_typ
 uint8_t BLEAdvertising::addServiceUUID(BLEUUID serviceUUID) {
 //	m_serviceUUIDs.push_back(serviceUUID);
     _serviceList[_serviceCount++] = (serviceUUID);
-    switch (serviceUUID.length()) {
+	Serial.printf("_serviceList[_serviceCount++] \n\r");
+	Serial.printf("serviceUUID.getNative()->len: %d \n\r",serviceUUID.getNative()->len);
+    switch (serviceUUID.getNative()->len) {
         case 2: {
             uint8_t data[4] = {3, GAP_ADTYPE_16BIT_COMPLETE};
-            memcpy(&(data[2]), serviceUUID.dataNative(), 2);
+            memcpy(&(data[2]), &(serviceUUID.getNative()->uuid), 2);
             addData(data, 4, adv_scan_data);
             break;
         }
         case 4: {
             uint8_t data[6] = {5, GAP_ADTYPE_32BIT_COMPLETE};
-            memcpy(&(data[2]), serviceUUID.dataNative(), 4);
+            memcpy(&(data[2]), &(serviceUUID.getNative()->uuid), 4);
             addData(data, 6, adv_scan_data);
             break;
         }
         case 16: {
             uint8_t data[18] = {17, GAP_ADTYPE_128BIT_COMPLETE};
-            memcpy(&(data[2]), serviceUUID.dataNative(), 16);
+            memcpy(&(data[2]), &(serviceUUID.getNative()->uuid), 16);  
             addData(data, 18, adv_scan_data);
+			Serial.printf("data:");
+	        for(int i = 0; i < 18; i++)
+	        {
+		       Serial.printf("%02x ",data[i]);
+	        }
+	        Serial.printf("\n\r");
+
             break;
         }
         default:
             break;
     }
+	Serial.printf("scan_dataSize:%d\n\r",scan_dataSize);
     return scan_dataSize;   
 } // addServiceUUID
 
@@ -118,7 +140,14 @@ void BLEAdvertising::setScanResponse(bool set) {
 //	m_scanResp = set;
     if (set == true)
 	{
+		
 		memcpy(_scanRspData, scan_data, scan_dataSize);
+		Serial.printf("_scanRspData:");
+	    for(int i = 0; i < 31; i++)
+	    {
+		    Serial.printf("%02x ",_scanRspData[i]);
+	    }
+	    Serial.printf("\n\r");
         _scanRspDataSize = scan_dataSize;
 	}
 }
@@ -140,11 +169,12 @@ void BLEAdvertising::setMinPreferred(uint16_t mininterval) {
  * @return N/A.
  */
 void BLEAdvertising::start() {
-
+	
 	addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
 	addCompleteName("SEEED_BLE_DEV");
 	setAdvData();
-#if 1
+	Serial.printf("BLEAdvertising::start()\n\r");
+
 	le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(_advEvtType), &(_advEvtType));
     le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(_advDirectType), &(_advDirectType));
     le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(_advDirectAddr), (_advDirectAddr));
@@ -156,8 +186,12 @@ void BLEAdvertising::start() {
     le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
 
     le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(_slaveInitMtuReq), &_slaveInitMtuReq);
-#endif
+	Serial.printf("BLEAdvertising::end()\n\r");
+
+	ble_start();
+	Serial.printf("BLEAdvertising::end()\n\r");
     le_adv_start();
+	Serial.printf("BLEAdvertising::end()\n\r");
     
 } // start
 

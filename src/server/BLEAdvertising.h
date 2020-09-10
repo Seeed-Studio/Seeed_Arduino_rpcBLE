@@ -43,6 +43,7 @@ class BLEAdvertising {
 public:
 	BLEAdvertising();
 	void start();
+    void addServiceUUID(const char* serviceUUID);
 	uint8_t addServiceUUID(BLEUUID serviceUUID);
 	void setScanResponse(bool);
     void setMinPreferred(uint16_t);
