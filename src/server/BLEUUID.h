@@ -33,14 +33,19 @@ class BLEUUID {
 public:
 	std::string    toString();
     BLEUUID();
+    BLEUUID(std::string uuid);
 	BLEUUID(uint16_t uuid);
-    BLEUUID(const char * str);      // Build a BLEUUID object from an UUID string. Use of hyphens (-) to seperate UUID sections in the string is acceptable.
+ //   BLEUUID(const char * str);      // Build a BLEUUID object from an UUID string. Use of hyphens (-) to seperate UUID sections in the string is acceptable.
     BLEUUID(uint8_t* data, uint8_t length);	
 	const char* str();
 	bool           equals(BLEUUID uuid);
 	bt_uuid_t* getNative();
     BLEUUID        to128();
 
+    uint8_t length();
+    const uint8_t* dataNative();
+
+   
 private:
     bool          m_valueSet = false;   // Is there a value set for this instance.
 	bt_uuid_t m_uuid;       		// The underlying UUID structure that this class wraps.

@@ -62,6 +62,7 @@ std::string BLEUUID::toString() {
 BLEUUID::BLEUUID() {
 }
 
+#if 0
 BLEUUID::BLEUUID(const char * str) {
     char temp[] = {0, 0, 0};
 
@@ -95,6 +96,9 @@ BLEUUID::BLEUUID(const char * str) {
         _dataNative[i] = _data[(_length - 1 - i)];
     }
 }
+
+#endif 
+
 
 BLEUUID::BLEUUID(uint8_t* data, uint8_t length) {
     if ((length == 2) || (length == 4) || (length == 16)) {
@@ -233,4 +237,96 @@ bt_uuid_t* BLEUUID::getNative() {
 } // getNative
 
 
+uint8_t BLEUUID::length() {
+    return _length;
+}
 
+const uint8_t* BLEUUID::dataNative() {
+    return _dataNative;
+}
+
+
+
+
+static void memrcpy(uint8_t* target, uint8_t* source, uint32_t size) {
+	assert(size > 0);
+	target += (size - 1); // Point target to the last byte of the target data
+	while (size > 0) {
+		*target = *source;
+		target--;
+		source++;
+		size--;
+	}
+} // memrcpy
+
+
+/**
+ * @brief Create a UUID from a string.
+ *
+ * Create a UUID from a string.  There will be two possible stories here.  Either the string represents
+ * a binary data field or the string represents a hex encoding of a UUID.
+ * For the hex encoding, here is an example:
+ *
+ * ```
+ * "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+ *  0 1 2 3  4 5  6 7  8 9  0 1 2 3 4 5
+ *  12345678-90ab-cdef-1234-567890abcdef
+ * ```
+ *
+ * This has a length of 36 characters.  We need to parse this into 16 bytes.
+ *
+ * @param [in] value The string to build a UUID from.
+ */
+BLEUUID::BLEUUID(std::string value) {
+	m_valueSet = true;
+	if (value.length() == 4) {
+		m_uuid.len         = UUID_LEN_16;
+		m_uuid.uuid.uuid16 = 0;
+		for(int i=0;i<value.length();){
+			uint8_t MSB = value.c_str()[i];
+			uint8_t LSB = value.c_str()[i+1];
+			
+			if(MSB > '9') MSB -= 7;
+			if(LSB > '9') LSB -= 7;
+			m_uuid.uuid.uuid16 += (((MSB&0x0F) <<4) | (LSB & 0x0F))<<(2-i)*4;
+			i+=2;	
+		}
+	}
+	else if (value.length() == 8) {
+		m_uuid.len         = UUID_LEN_32;
+		m_uuid.uuid.uuid32 = 0;
+		for(int i=0;i<value.length();){
+			uint8_t MSB = value.c_str()[i];
+			uint8_t LSB = value.c_str()[i+1];
+			
+			if(MSB > '9') MSB -= 7; 
+			if(LSB > '9') LSB -= 7;
+			m_uuid.uuid.uuid32 += (((MSB&0x0F) <<4) | (LSB & 0x0F))<<(6-i)*4;
+			i+=2;
+		}		
+	}
+	else if (value.length() == 16) {  // how we can have 16 byte length string reprezenting 128 bit uuid??? needs to be investigated (lack of time)
+		m_uuid.len = UUID_LEN_128;
+		memrcpy(m_uuid.uuid.uuid128, (uint8_t*)value.data(), 16);
+	}
+	else if (value.length() == 36) {
+		// If the length of the string is 36 bytes then we will assume it is a long hex string in
+		// UUID format.
+		m_uuid.len = UUID_LEN_128;
+		int n = 0;
+		for(int i=0;i<value.length();){
+			if(value.c_str()[i] == '-')
+				i++;
+			uint8_t MSB = value.c_str()[i];
+			uint8_t LSB = value.c_str()[i+1];
+			
+			if(MSB > '9') MSB -= 7; 
+			if(LSB > '9') LSB -= 7;
+			m_uuid.uuid.uuid128[15-n++] = ((MSB&0x0F) <<4) | (LSB & 0x0F);
+			i+=2;	
+		}
+	}
+	else {
+		m_valueSet = false;
+	}
+} //BLEUUID(std::string)
