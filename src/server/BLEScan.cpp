@@ -9,16 +9,15 @@
 #include <map>
 #include <Arduino.h>
 #include "BLEScan.h"
+#include <functional>
 
 uint8_t BLEScan::_scanProcessing = 0;
-
-
 /**
  * Constructor
  */
 
 BLEScan::BLEScan() {
-    _scanProcessing = 0;	
+	_scanProcessing = 0;
 } // BLEScan
 
 
@@ -59,7 +58,6 @@ void BLEScan::setInterval(uint16_t intervalMSecs) {
  */
 void BLEScan::setWindow(uint16_t windowMSecs) {
 	if ((windowMSecs * 1000 / 625) > m_scanInterval) {
-        Serial.printf("Scan window should be less than or equal to scan interval\r\n");
         return;
     }
     if ((windowMSecs >= 3) && (windowMSecs <= 10240)) {
@@ -72,7 +70,6 @@ void BLEScan::setWindow(uint16_t windowMSecs) {
  * Set scan parameters
  */
 void BLEScan::updateScanParams() {
-    Serial.printf("Set scan parameters...................\r\n");
     uint8_t  _scanMode = m_scanMode;
     le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(_scanMode), &_scanMode);
 	uint16_t _scanInterval = m_scanInterval;
@@ -115,8 +112,17 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
 		}
 		m_scanResults.m_vectorAdvertisedDevices.clear();
 	}
-	
-    le_scan_start();
+    T_GAP_CAUSE cause;
+	if (_scanProcessing) {
+        Serial.printf("Scan is processing, please stop it first\n\r");
+    } else {
+        _scanProcessing = 1;
+        cause = le_scan_start();
+        if (cause != GAP_CAUSE_SUCCESS) {
+            Serial.printf("Scan error\n\r");
+            _scanProcessing = 0;
+        }
+    }
 	delay(1000);
     return true;
 } // start
@@ -152,6 +158,10 @@ void BLEScan::setAdvertisedDeviceCallbacks(BLEAdvertisedDeviceCallbacks* pAdvert
 int BLEScanResults::getCount() {
 	return m_vectorAdvertisedDevices.size();
 } // getCount
+
+BLEScanResults BLEScan::getResults() {
+	return m_scanResults;
+}
 
 void BLEScan::clearResults() {
 	for(auto _dev : m_scanResults.m_vectorAdvertisedDevices){

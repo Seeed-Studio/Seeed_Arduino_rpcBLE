@@ -44,9 +44,9 @@ public:
 										bool wantDuplicates = false);
 	bool           start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), bool is_continue = false);
 	BLEScanResults start(uint32_t duration, bool is_continue = false);
+	BLEScanResults getResults();
 	void		   clearResults();
 	void           stop();
-    static uint8_t                _scanProcessing;
 	
     
 private:
@@ -64,7 +64,8 @@ private:
     
 	BLEScanResults                     m_scanResults;
 	void                               (*m_scanCompleteCB)(BLEScanResults scanResults);
-	BLEAdvertisedDeviceCallbacks*      m_pAdvertisedDeviceCallbacks = nullptr;	
+	BLEAdvertisedDeviceCallbacks*      m_pAdvertisedDeviceCallbacks = nullptr;
+	static uint8_t                     _scanProcessing;	
 	
 };
 
