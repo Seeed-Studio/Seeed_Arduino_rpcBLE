@@ -40,7 +40,7 @@ public:
     BLEService* getFirst();
     BLEService* getNext();
     std::string toString();
-    void        handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
+    void         handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 private:
     std::map<BLEService*, std::string> m_uuidMap;
     std::map<uint16_t, BLEService*>    m_handleMap;
@@ -61,7 +61,9 @@ public:
     uint16_t		m_appId;
 
     void addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
+    uint16_t getPeerMTU(uint16_t conn_id);
 
+    uint16_t getconnId();
 private:
     BLEServer();
     friend class BLEDevice;
@@ -77,7 +79,7 @@ private:
     void            createApp(uint16_t appId);
     void            registerApp(uint16_t);
     BLEServiceMap       m_serviceMap;
-	void            handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
+	void             handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 
 
 }; // BLEServer

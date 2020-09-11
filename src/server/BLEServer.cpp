@@ -42,6 +42,9 @@ void BLEServer::createApp(uint16_t appId) {
  * @return A reference to the new service object.
  */
 BLEService* BLEServer::createService(const char* uuid) {
+	BLEUUID bbb = BLEUUID(uuid);
+	Serial.printf("service uuid: \n\r");
+	Serial.println(bbb.toString().c_str());
 	return createService(BLEUUID(uuid));
 }
 
@@ -57,14 +60,13 @@ BLEService* BLEServer::createService(const char* uuid) {
  * @return A reference to the new service object.
  */
 BLEService* BLEServer::createService(BLEUUID uuid, uint32_t numHandles, uint8_t inst_id) {
-	m_semaphoreCreateEvt.take("createService");
-
+//	m_semaphoreCreateEvt.take("createService");
 	BLEService* pService = new BLEService(uuid, numHandles);
 	pService->m_instId = inst_id;
 	m_serviceMap.setByUUID(uuid, pService); // Save a reference to this service being on this server.
 	pService->executeCreate(this);          // Perform the API calls to actually create the service.
 
-	m_semaphoreCreateEvt.wait("createService");
+//	m_semaphoreCreateEvt.wait("createService");
 
 	return pService;
 } // createService
@@ -119,10 +121,19 @@ void BLEServer::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
 		.connected = true,
 		.mtu = 23
 	};
-
+    m_connId = conn_id;
 	m_connectedServersMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));	
 }
 
+
+uint16_t BLEServer::getPeerMTU(uint16_t conn_id) {
+	return m_connectedServersMap.find(conn_id)->second.mtu;
+}
+
+
+uint16_t  BLEServer::getconnId(){
+	return m_connId;
+}
 
 /**
  * @brief Handle a GATT Server Event.
@@ -132,9 +143,8 @@ void BLEServer::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
  * @param [in] param
  *
  */
-void BLEServer::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
-
-
+void BLEServer::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
+    Serial.printf("into server :: handleGATTServerEvent\n\r");
 	// Invoke the handler for every Service we have.
-	m_serviceMap.handleGATTServerEvent(service_id,p_datas);
+	m_serviceMap.handleGATTServerEvent(service_id,p_data);
 } // handleGATTServerEvent
