@@ -86,10 +86,10 @@ BLECharacteristic* BLECharacteristicMap::getNext() {
  * @param [in] gatts_if
  * @param [in] param
  */
-void BLECharacteristicMap::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
+void BLECharacteristicMap::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
 	// Invoke the handler for every Service we have.
 	for (auto& myPair : m_uuidMap) {
-		myPair.first->handleGATTServerEvent(service_id,p_datas);
+		myPair.first->handleGATTServerEvent(service_id,p_data);
 	}
 } // handleGATTServerEvent
 
