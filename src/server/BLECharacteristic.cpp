@@ -26,6 +26,7 @@ BLECharacteristic::BLECharacteristic(BLEUUID uuid, uint32_t properties) {
 	m_handle     = NULL_HANDLE;
 	m_properties = (uint8_t)0;
 	m_pCallbacks = &defaultCallback;
+	m_permissions = GATT_PERM_ALL;
 
 	setBroadcastProperty((properties & PROPERTY_BROADCAST) != 0);
 	setReadProperty((properties & PROPERTY_READ) != 0);
@@ -195,6 +196,22 @@ void BLECharacteristic::setValue(uint8_t* data, size_t length) {
 	m_semaphoreSetValue.give();  
 } // setValue
 
+
+
+/**
+ * @brief Set the callback handlers for this characteristic.
+ * @param [in] pCallbacks An instance of a callbacks structure used to define any callbacks for the characteristic.
+ */
+void BLECharacteristic::setCallbacks(BLECharacteristicCallbacks* pCallbacks) {
+	if (pCallbacks != nullptr){
+		m_pCallbacks = pCallbacks;
+	} else {
+		m_pCallbacks = &defaultCallback;
+	}
+} // setCallbacks
+
+BLECharacteristicCallbacks::~BLECharacteristicCallbacks() {}
+
 /**
  * @brief Get the UUID of the characteristic.
  * @return The UUID of the characteristic.
@@ -222,6 +239,14 @@ uint8_t BLECharacteristic::getHandle() {
 }
 
 /**
+ * @brief Retrieve the current value of the characteristic.
+ * @return A pointer to storage containing the current characteristic value.
+ */
+std::string BLECharacteristic::getValue() {
+	return m_value.getValue();
+} // getValue
+
+/**
  * @brief Register a new characteristic with the ESP runtime.
  * @param [in] pService The service with which to associate this characteristic.
  */
@@ -233,7 +258,7 @@ void BLECharacteristic::executeCreate(BLEService* pService) {
 
 	m_pService = pService; // Save the service to which this characteristic belongs.
 
-    setAccessPermissions(GATT_PERM_READ);
+   // setAccessPermissions(GATT_PERM_READ);
 //	esp_attr_control_t control;
 //	control.auto_rsp = ESP_GATT_RSP_BY_APP;
 
@@ -275,8 +300,107 @@ void BLECharacteristic::executeCreate(BLEService* pService) {
 /**
  * Handle a GATT server event.
  */
-void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
 
+void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
 
-	m_descriptorMap.handleGATTServerEvent(service_id,p_datas);
+    ble_service_cb_data_t *cb_data = (ble_service_cb_data_t *)p_data;
+    Serial.println("ble_gatt_server_callback\n\r");
+    switch (cb_data->event)
+    {
+    case SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION:
+    {
+        break;
+    }
+    case SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE:
+    {
+		if (getHandle() == cb_data->attrib_handle)
+		{
+		Serial.println("SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE\n\r");
+		m_pCallbacks->onRead(this);
+		uint16_t maxOffset =  getService()->getServer()->getPeerMTU(getService()->getServer()->getconnId()) - 1;
+		std::string value = m_value.getValue();
+		if (value.length() - m_value.getReadOffset() < maxOffset) {
+			cb_data->cb_data_context.read_data.length = value.length() - m_value.getReadOffset();
+			cb_data->cb_data_context.read_data.offset = m_value.getReadOffset();
+			//memcpy(cb_data->cb_data_context.read_data.p_value, value.data() + cb_data->cb_data_context.read_data.offset, cb_data->cb_data_context.read_data.length);
+			cb_data->cb_data_context.read_data.p_value = (uint8_t*)(value.data() + cb_data->cb_data_context.read_data.offset);
+			m_value.setReadOffset(0);
+		}else
+		{
+			cb_data->cb_data_context.read_data.length = maxOffset;
+			cb_data->cb_data_context.read_data.offset = m_value.getReadOffset();
+			//memcpy(cb_data->cb_data_context.read_data.p_value, value.data() + cb_data->cb_data_context.read_data.offset, cb_data->cb_data_context.read_data.length);
+			cb_data->cb_data_context.read_data.p_value = (uint8_t*)(value.data() + cb_data->cb_data_context.read_data.offset);
+			m_value.setReadOffset(cb_data->cb_data_context.read_data.offset + maxOffset);
+		}
+        if (value.length() + 1 > maxOffset) {
+			// Too big for a single shot entry.
+			m_value.setReadOffset(maxOffset);
+			cb_data->cb_data_context.read_data.length = maxOffset;
+			cb_data->cb_data_context.read_data.offset = 0;
+			//memcpy(rsp.attr_value.value, value.data(), rsp.attr_value.len);
+			cb_data->cb_data_context.read_data.p_value = (uint8_t*)value.data();
+		} else {
+			// Will fit in a single packet with no callbacks required.
+			cb_data->cb_data_context.read_data.length = value.length();
+			cb_data->cb_data_context.read_data.offset = 0;
+			cb_data->cb_data_context.read_data.p_value = (uint8_t*)value.data();
+			//memcpy(rsp.attr_value.value, value.data(), rsp.attr_value.len);
+		}
+		}
+        break;
+    }
+    case SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE:
+    {
+		if(getHandle() == cb_data->attrib_handle) {
+		m_value.addPart(cb_data->cb_data_context.write_data.p_value,cb_data->cb_data_context.write_data.length);
+		m_value.commit();
+		setValue(cb_data->cb_data_context.write_data.p_value, cb_data->cb_data_context.write_data.length);
+		m_pCallbacks->onWrite(this);
+        break;
+		}
+    }
+    default:
+        break;
+    }
+
+	m_descriptorMap.handleGATTServerEvent(service_id,p_data);
 } // handleGATTServerEvent
+
+
+
+
+/**
+ * @brief Callback function to support a read request.
+ * @param [in] pCharacteristic The characteristic that is the source of the event.
+ */
+void BLECharacteristicCallbacks::onRead(BLECharacteristic* pCharacteristic) {
+
+} // onRead
+
+
+/**
+ * @brief Callback function to support a write request.
+ * @param [in] pCharacteristic The characteristic that is the source of the event.
+ */
+void BLECharacteristicCallbacks::onWrite(BLECharacteristic* pCharacteristic) {
+
+} // onWrite
+
+/**
+ * @brief Callback function to support a Notify request.
+ * @param [in] pCharacteristic The characteristic that is the source of the event.
+ */
+void BLECharacteristicCallbacks::onNotify(BLECharacteristic* pCharacteristic) {
+
+} // onNotify
+
+/**
+ * @brief Callback function to support a Notify/Indicate Status report.
+ * @param [in] pCharacteristic The characteristic that is the source of the event.
+ * @param [in] s Status of the notification/indication
+ * @param [in] code Additional code of underlying errors
+ */
+void BLECharacteristicCallbacks::onStatus(BLECharacteristic* pCharacteristic, Status s, uint32_t code) {
+
+} // onStatus

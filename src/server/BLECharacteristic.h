@@ -32,7 +32,7 @@ public:
 	BLEDescriptor* getNext();
 	BLEDescriptor* getByHandle(uint16_t handle);
 	std::string	toString();
-	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
+	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 
 
 private:
@@ -62,6 +62,7 @@ public:
 	void setValue(uint8_t* data, size_t size);
 
 	void setAccessPermissions(uint32_t perm);
+	void setCallbacks(BLECharacteristicCallbacks* pCallbacks);
 
 	BLEDescriptor* createDescriptor(BLEUUID uuid,uint16_t flags,uint32_t permissions,uint16_t max_len);
 	BLEDescriptor* createDescriptor(const char* uuid, uint16_t flags,uint32_t permissions,uint16_t max_len);
@@ -69,6 +70,7 @@ public:
 	BLEDescriptor* getDescriptorByUUID(BLEUUID descriptorUUID);
 	
 	BLEService*    getService();
+	std::string    getValue();
 
 	BLEUUID        getUUID();
 
@@ -99,7 +101,7 @@ private:
 	uint8_t              getProperties();
 	uint32_t             getAccessPermissions();
 	uint8_t             getHandle();
-	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
+	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 	BLEFreeRTOS::Semaphore m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 	BLEFreeRTOS::Semaphore m_semaphoreSetValue  = BLEFreeRTOS::Semaphore("SetValue"); 
 
@@ -126,6 +128,12 @@ public:
 		ERROR_INDICATE_TIMEOUT,
 		ERROR_INDICATE_FAILURE
 	}Status;
+
+	virtual ~BLECharacteristicCallbacks();
+	virtual void onRead(BLECharacteristic* pCharacteristic);
+	virtual void onWrite(BLECharacteristic* pCharacteristic);
+	virtual void onNotify(BLECharacteristic* pCharacteristic);
+	virtual void onStatus(BLECharacteristic* pCharacteristic, Status s, uint32_t code);
 
 };
 #endif /* COMPONENTS_CPP_UTILS_BLECHARACTERISTIC_H_ */
