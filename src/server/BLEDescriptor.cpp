@@ -41,6 +41,28 @@ BLEDescriptor::~BLEDescriptor() {
 
 
 /**
+ * @brief Set the value of the descriptor.
+ * @param [in] data The data to set for the descriptor.
+ * @param [in] length The length of the data in bytes.
+ */
+void BLEDescriptor::setValue(uint8_t* data, size_t length) {
+	if (length > 600) {
+		return;
+	}
+	m_attr_max_len = length;
+	memcpy(m_attr_value, data, length);
+} // setValue
+
+/**
+ * @brief Set the value of the descriptor.
+ * @param [in] value The value of the descriptor in string form.
+ */
+void BLEDescriptor::setValue(std::string value) {
+	setValue((uint8_t*) value.data(), value.length());
+} // setValue
+
+
+/**
  * @brief Get the UUID of the descriptor.
  */
 BLEUUID BLEDescriptor::getUUID() {
@@ -163,6 +185,7 @@ void BLEDescriptorCallbacks::onWrite(BLEDescriptor* pDescriptor) {
 } // onWrite
 
 
+
 /**
  * @brief Handle GATT server events for the descripttor.
  * @param [in] event
@@ -170,7 +193,28 @@ void BLEDescriptorCallbacks::onWrite(BLEDescriptor* pDescriptor) {
  * @param [in] param
  */
 void BLEDescriptor::handleGATTServerEvent(
-		T_SERVER_ID service_id,
-	    void *p_datas) {
+		            T_SERVER_ID service_id,
+	             void *p_data) {
+	ble_service_cb_data_t *cb_data = (ble_service_cb_data_t *)p_data;
+    switch (cb_data->event)
+    {
+    case SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION:
+    {
+        break;
+    }
+    case SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE:
+    {
+        break;
+    }
+    case SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE:
+    {
+      //  setValue(cb_data->cb_data_context.read_data.p_value, cb_data->cb_data_context.read_data.length);
+		//m_pCallback->onWrite(this);
+
+        break;
+    }
+    default:
+        break;
+    }
 
 } // handleGATTServerEvent

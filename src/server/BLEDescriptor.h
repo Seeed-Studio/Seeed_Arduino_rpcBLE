@@ -28,6 +28,8 @@ public:
 	virtual ~BLEDescriptor();
     BLEUUID  getUUID();
     uint16_t getHandle();
+	void setValue(uint8_t* data, size_t size);              // Set the value of the descriptor as a pointer to data.
+	void setValue(std::string value);
 private:
 	friend class BLEDescriptorMap;
 	friend class BLECharacteristic;
@@ -43,7 +45,7 @@ private:
     uint16_t                m_flags;
 	uint32_t                m_permissions;
 
-    void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
+    void  handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 	BLEFreeRTOS::Semaphore     m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 
 	void executeCreate(BLECharacteristic* pCharacteristic);
