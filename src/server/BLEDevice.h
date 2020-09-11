@@ -32,9 +32,11 @@ public:
 
 	static BLEAdvertising* 	getAdvertising();
 	static void		   		startAdvertising();
+	static BLEServer*       getServer();
 
 private:
     friend class BLEClient;
+	friend class BLEServer;
 	static BLEServer*	m_pServer;
     static BLEClient*	m_pClient;
     static BLEScan*	   _pBLEScan;
@@ -48,7 +50,7 @@ private:
 
 
 //*********************ble server eventhandler*****************************************************
-	static void gattServerEventHandler(T_SERVER_ID service_id, void *p_datas);
+	static T_APP_RESULT gattServerEventHandler(T_SERVER_ID service_id, void *p_data);
 };
 
 #endif /* MAIN_BLEDevice_H_ */

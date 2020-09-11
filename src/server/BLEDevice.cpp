@@ -65,6 +65,11 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_SLAVE; // 0:close 1:server 2:cli
 	return _pBLEScan;
 } // getScan
 
+/* STATIC */ BLEServer* BLEDevice::getServer() {
+	return m_pServer;
+} // getScan
+
+
 
 BLEAdvertising* BLEDevice::getAdvertising() {
 	if(m_bleAdvertising == nullptr) {
@@ -102,7 +107,7 @@ void BLEDevice::startAdvertising() {
     
 
     //************注册server的回调函数****************************************************************
-   // esp_ble_gatts_register_callback(BLEDevice::gattServerEventHandler);
+    le_register_gatts_cb(BLEDevice::gattServerEventHandler);
 
     /*
      * Set Bluetooth device  name
@@ -169,7 +174,7 @@ void BLEDevice::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
 		.connected = true,
 		.mtu = 23
 	};
-
+    
 	m_connectedClientsMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
 }
 void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
@@ -185,14 +190,17 @@ void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
  * @param [in] gatts_if The connection to the GATT interface.
  * @param [in] param Parameters for the event.
  */
-/* STATIC */ void BLEDevice::gattServerEventHandler(
+/* STATIC */ T_APP_RESULT BLEDevice::gattServerEventHandler(
    T_SERVER_ID service_id,
    void *p_data
 ) {	
-
+    T_APP_RESULT result = APP_RESULT_SUCCESS;
     if (BLEDevice::m_pServer != nullptr) {
+        Serial.printf("into device :: gattServerEventHandler\n\r");
+
 		BLEDevice::m_pServer->handleGATTServerEvent(service_id, p_data);
 	}
+    return APP_RESULT_SUCCESS;
 
 } // gattServerEventHandler
 
@@ -223,6 +231,7 @@ void  BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     break;
     case GAP_MSG_LE_CONN_STATE_CHANGE:
     {
+
         Serial.printf("GAP_MSG_LE_CONN_STATE_CHANGE\n\r");
         ble_conn_state_evt_handler(gap_msg.msg_data.gap_conn_state_change.conn_id,
                                    (T_GAP_CONN_STATE)gap_msg.msg_data.gap_conn_state_change.new_state,
@@ -343,6 +352,9 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
         }
         case GAP_CONN_STATE_CONNECTED:
         {
+            //m_connId = conn_id;
+            BLEDevice::getServer()->addPeerDevice((void*)BLEDevice::getServer(), false, conn_id);
+        
             le_get_conn_addr(conn_id, ble_clinet_link_table[conn_id].bd_addr, (uint8_t *)&ble_clinet_link_table[conn_id].bd_type);
             Serial.printf("[BLE Device] Connected conn_id %d\n\r", conn_id);
             {
