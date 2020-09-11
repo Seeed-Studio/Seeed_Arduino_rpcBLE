@@ -198,7 +198,7 @@ void BLEService::start() {
 //	m_semaphoreStartEvt.take("start");
 
 	//****************************启动service服务***************************************************************
-	T_SERVER_ID handle = ble_service_start(0);
+	T_SERVER_ID handle = ble_service_start(getgiff());
 	Serial.printf("ble_service_start: %d", handle);
 
 //	m_semaphoreStartEvt.wait("start");
@@ -208,9 +208,9 @@ void BLEService::start() {
 /**
  * @brief Handle a GATTS server event.
  */
-void BLEService::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
+void BLEService::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
 
-	
+	Serial.printf("into BLEService :: handleGATTServerEvent\n\r");
 	// Invoke the GATTS handler in each of the associated characteristics.
-	m_characteristicMap.handleGATTServerEvent(service_id,p_datas);
+	m_characteristicMap.handleGATTServerEvent(service_id,p_data);
 } // handleGATTServerEvent

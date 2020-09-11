@@ -27,7 +27,7 @@ public:
 	BLECharacteristic* getFirst();
 	BLECharacteristic* getNext();
     BLECharacteristic* getByHandle(uint16_t handle);
-    void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
+    void handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 
 private:
 	std::map<BLECharacteristic*, std::string> m_uuidMap;
@@ -71,7 +71,7 @@ private:
 	uint8_t             m_giff;
 
     BLECharacteristicMap m_characteristicMap;
-	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas);
+	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 	BLEFreeRTOS::Semaphore  m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 	BLEFreeRTOS::Semaphore  m_semaphoreStartEvt  = BLEFreeRTOS::Semaphore("StartEvt");
 
