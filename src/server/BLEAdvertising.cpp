@@ -24,34 +24,7 @@
  *
  */
 BLEAdvertising::BLEAdvertising() {
-#if 0
-	m_advData.set_scan_rsp        = false;
-	m_advData.include_name        = true;
-	m_advData.include_txpower     = true;
-	m_advData.min_interval        = 0x20;
-	m_advData.max_interval        = 0x40;
-	m_advData.appearance          = 0x00;
-	m_advData.manufacturer_len    = 0;
-	m_advData.p_manufacturer_data = nullptr;
-	m_advData.service_data_len    = 0;
-	m_advData.p_service_data      = nullptr;
-	m_advData.service_uuid_len    = 0;
-	m_advData.p_service_uuid      = nullptr;
-	m_advData.flag                = ((0x01 << 1) | (0x01 << 2));
 
-
-	m_adv_int_min       = 0x20;
-	m_adv_int_max       = 0x40;
-
-	m_advParams.adv_type          = ADV_TYPE_IND;
-	m_advParams.own_addr_type     = BLE_ADDR_TYPE_PUBLIC;
-	m_advParams.channel_map       = ADV_CHNL_ALL;
-	m_advParams.adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY;
-	m_advParams.peer_addr_type    = BLE_ADDR_TYPE_PUBLIC;
-
-	m_customAdvData               = false;   // No custom advertising data
-	m_customScanResponseData      = false;   // No custom scan response data
-#endif
 } // BLEAdvertising
 
 
