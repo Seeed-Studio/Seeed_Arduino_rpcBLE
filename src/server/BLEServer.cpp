@@ -135,6 +135,11 @@ uint16_t  BLEServer::getconnId(){
 	return m_connId;
 }
 
+
+std::map<uint16_t, conn_status_t> BLEServer::getPeerDevices(bool _client) {
+	return m_connectedServersMap;
+}
+
 /**
  * @brief Handle a GATT Server Event.
  *
