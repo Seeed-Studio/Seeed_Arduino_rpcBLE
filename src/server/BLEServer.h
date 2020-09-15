@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "BLEUUID.h"
-//#include "BLEAdvertising.h"
+#include "BLEAdvertising.h"
 #include "BLECharacteristic.h"
 #include "BLEService.h"
 #include "BLEFreeRTOS.h"
@@ -60,13 +60,16 @@ public:
     BLEService*     createService(const char* uuid);
     BLEService*     createService(BLEUUID uuid, uint32_t numHandles=15, uint8_t inst_id=0);
     void            setCallbacks(BLEServerCallbacks* pCallbacks);
+    BLEAdvertising* getAdvertising();
+    void            startAdvertising();
     uint16_t		m_appId;
 
     void addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
+    bool removePeerDevice(uint16_t conn_id, bool client);
     uint16_t getPeerMTU(uint16_t conn_id);
     
     uint16_t getconnId();
-
+    BLEServerCallbacks* getCallbacks();
     std::map<uint16_t, conn_status_t> getPeerDevices(bool client);
 private:
     BLEServer();
@@ -82,6 +85,7 @@ private:
     BLEFreeRTOS::Semaphore m_semaphoreCreateEvt 		= BLEFreeRTOS::Semaphore("CreateEvt");
     void            createApp(uint16_t appId);
     void            registerApp(uint16_t);
+    
     BLEServiceMap       m_serviceMap;
 	void             handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 

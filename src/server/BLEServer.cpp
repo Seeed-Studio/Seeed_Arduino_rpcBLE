@@ -99,6 +99,10 @@ void BLEServer::setCallbacks(BLEServerCallbacks* pCallbacks) {
 	m_pServerCallbacks = pCallbacks;
 } // setCallbacks
 
+BLEServerCallbacks* BLEServer::getCallbacks() {
+	return m_pServerCallbacks;
+}
+
 
 
 void BLEServerCallbacks::onConnect(BLEServer* pServer) {
@@ -125,6 +129,10 @@ void BLEServer::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
 	m_connectedServersMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));	
 }
 
+bool BLEServer::removePeerDevice(uint16_t conn_id, bool _client) {
+	return m_connectedServersMap.erase(conn_id) > 0;
+}
+/* multi connect support */
 
 uint16_t BLEServer::getPeerMTU(uint16_t conn_id) {
 	return m_connectedServersMap.find(conn_id)->second.mtu;
@@ -134,6 +142,27 @@ uint16_t BLEServer::getPeerMTU(uint16_t conn_id) {
 uint16_t  BLEServer::getconnId(){
 	return m_connId;
 }
+
+
+/**
+ * @brief Retrieve the advertising object that can be used to advertise the existence of the server.
+ *
+ * @return An advertising object.
+ */
+BLEAdvertising* BLEServer::getAdvertising() {
+	return BLEDevice::getAdvertising();
+}
+
+/**
+ * @brief Start advertising.
+ *
+ * Start the server advertising its existence.  This is a convenience function and is equivalent to
+ * retrieving the advertising object and invoking start upon it.
+ */
+void BLEServer::startAdvertising() {
+	BLEDevice::startAdvertising();
+} // startAdvertising
+
 
 
 std::map<uint16_t, conn_status_t> BLEServer::getPeerDevices(bool _client) {
