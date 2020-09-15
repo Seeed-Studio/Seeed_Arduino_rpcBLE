@@ -13,7 +13,7 @@
 #include "BLE2902.h"
 
 BLE2902::BLE2902() : BLEDescriptor(BLEUUID((uint16_t) 0x2902), ATTRIB_FLAG_VALUE_INCL | ATTRIB_FLAG_CCCD_APPL, (GATT_PERM_READ | GATT_PERM_WRITE), 2) {
-	uint8_t data[2] = { 0, 0 };
+	uint8_t data[2] = { 1, 0 };
 	setValue(data, 2);
 } // BLE2902
 
