@@ -13,7 +13,6 @@
 #include "BLEDescriptor.h"
 #include "BLEValue.h"
 #include "BLEFreeRTOS.h"
-#include "BLEService.h"
 typedef uint8_t T_SERVER_ID;
 
 class BLEService;
@@ -33,8 +32,7 @@ public:
 	BLEDescriptor* getByHandle(uint16_t handle);
 	std::string	toString();
 	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
-
-
+ 
 private:
 	std::map<BLEDescriptor*, std::string> m_uuidMap;
 	std::map<uint16_t, BLEDescriptor*> m_handleMap;
@@ -71,6 +69,7 @@ public:
 	
 	BLEService*    getService();
 	std::string    getValue();
+	void notify(bool is_notification = true);
 
 	BLEUUID        getUUID();
 

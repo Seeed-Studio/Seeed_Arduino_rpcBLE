@@ -11,6 +11,7 @@
 #include "BLECharacteristic.h"
 #include "BLEService.h"
 #include "BLEDevice.h"
+#include "BLE2902.h"
 
 #define NULL_HANDLE (0xffff)
 
@@ -245,6 +246,59 @@ uint8_t BLECharacteristic::getHandle() {
 std::string BLECharacteristic::getValue() {
 	return m_value.getValue();
 } // getValue
+
+
+/**
+ * @brief Send a notify.
+ * A notification is a transmission of up to the first 20 bytes of the characteristic value.  An notification
+ * will not block; it is a fire and forget.
+ * @return N/A.
+ */
+void BLECharacteristic::notify(bool is_notification) {
+//	assert(getService() != nullptr);
+//	assert(getService()->getServer() != nullptr);
+
+	m_pCallbacks->onNotify(this);   // Invoke the notify callback.
+
+	// Test to see if we have a 0x2902 descriptor.  If we do, then check to see if notification is enabled
+	// and, if not, prevent the notification.
+
+	BLE2902 *p2902 = (BLE2902*)getDescriptorByUUID((uint16_t)0x2902);
+	if(is_notification) {
+		if (p2902 != nullptr && !p2902->getNotifications()) {
+			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_NOTIFY_DISABLED, 0);   // Invoke the notify callback.
+			return;
+		}
+	}
+	else{
+		if (p2902 != nullptr && !p2902->getIndications()) {
+			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_INDICATE_DISABLED, 0);   // Invoke the notify callback.
+			return;
+		}
+	}
+	for (auto &myPair : getService()->getServer()->getPeerDevices(false)) {
+		uint16_t _mtu = (myPair.second.mtu);
+		size_t length = m_value.getValue().length();
+#if 0
+		if(!is_notification) // is indication
+			m_semaphoreConfEvt.take("indicate");
+		esp_err_t errRc = ::esp_ble_gatts_send_indicate(
+				getService()->getServer()->getGattsIf(),
+				myPair.first,
+				getHandle(), length, (uint8_t*)m_value.getValue().data(), !is_notification); // The need_confirm = false makes this a notify.
+		if (errRc != ESP_OK) {
+			log_e("<< esp_ble_gatts_send_ %s: rc=%d %s",is_notification?"notify":"indicate", errRc, GeneralUtils::errorToString(errRc));
+			m_semaphoreConfEvt.give();
+			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_GATT, errRc);   // Invoke the notify callback.
+			return;
+		}
+#endif
+        server_send_data(0, getService()->getgiff(), getHandle(),(uint8_t*)m_value.getValue().data(), 1, GATT_PDU_TYPE_ANY);
+        m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::SUCCESS_NOTIFY, 0);   // Invoke the notify callback.
+	}
+} // Notify
+
+
 
 /**
  * @brief Register a new characteristic with the ESP runtime.
