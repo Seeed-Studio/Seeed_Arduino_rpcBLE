@@ -205,6 +205,7 @@ void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
 } // gattServerEventHandler
 
 
+
 /**
  * @brief    All the BT GAP MSG are pre-handled in this function.
  * @note     Then the event handling function shall be called according to the
@@ -342,6 +343,8 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
         {
         case GAP_CONN_STATE_DISCONNECTED:
         {
+            BLEDevice::getServer()->getCallbacks()->onDisconnect(BLEDevice::getServer());
+            BLEDevice::getServer()->removePeerDevice(conn_id, false);
             if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE)) && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
             {
                 Serial.printf("connection lost, conn_id %d, cause 0x%x\n\r", conn_id, disc_cause);
@@ -353,8 +356,10 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
         case GAP_CONN_STATE_CONNECTED:
         {
             //m_connId = conn_id;
+            Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED\n\r");
             BLEDevice::getServer()->addPeerDevice((void*)BLEDevice::getServer(), false, conn_id);
-        
+            BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
+
             le_get_conn_addr(conn_id, ble_clinet_link_table[conn_id].bd_addr, (uint8_t *)&ble_clinet_link_table[conn_id].bd_type);
             Serial.printf("[BLE Device] Connected conn_id %d\n\r", conn_id);
             {
@@ -387,6 +392,9 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
         }
         case GAP_CONN_STATE_CONNECTED:
         {
+            Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED111111\n\r");
+            BLEDevice::getServer()->addPeerDevice((void*)BLEDevice::getServer(), false, conn_id);
+            BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
             uint16_t conn_interval;
             uint16_t conn_latency;
             uint16_t conn_supervision_timeout;
