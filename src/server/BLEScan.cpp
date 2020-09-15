@@ -11,6 +11,7 @@
 #include "BLEScan.h"
 #include <functional>
 
+bool ble_scan_flags  = false;
 uint8_t BLEScan::_scanProcessing = 0;
 /**
  * Constructor
@@ -84,6 +85,11 @@ void BLEScan::updateScanParams() {
  * @return The BLEScanResults.
  */
 BLEScanResults BLEScan::start(uint32_t duration, bool is_continue) {
+	if (!ble_scan_flags)
+	{
+		ble_scan_flags = true;
+		ble_start();
+	}
 	updateScanParams();	
 	if(start(duration, nullptr, is_continue)) {
 		m_semaphoreScanEnd.wait("start");   // Wait for the semaphore to release.
@@ -112,6 +118,10 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
 		}
 		m_scanResults.m_vectorAdvertisedDevices.clear();
 	}
+    
+	uint32_t m_duration = duration * 1000;
+	le_scan_timer_start(m_duration);
+#if 0
     T_GAP_CAUSE cause;
 	if (_scanProcessing) {
         Serial.printf("Scan is processing, please stop it first\n\r");
@@ -123,7 +133,10 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
             _scanProcessing = 0;
         }
     }
-	delay(1000);
+#endif 
+    //le_scan_start();
+	//delay(1000);
+	Serial.printf("Scan is processing, please end\n\r");
     return true;
 } // start
 
