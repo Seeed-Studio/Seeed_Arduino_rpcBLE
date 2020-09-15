@@ -78,13 +78,20 @@ uint16_t BLEDescriptor::getHandle() {
 } // getHandle
 
 
+/**
+ * @brief Get the value of this descriptor.
+ * @return A pointer to the value of this descriptor.
+ */
+uint8_t* BLEDescriptor::getValue() {
+	return m_attr_value;
+} // getValue
+
+
+
 uint16_t BLEDescriptor::getflags() {
 	return m_flags;
 } // m_flags
 
-uint8_t* BLEDescriptor::getattrvalue(){
-	return m_attr_value;
-}
 
 uint16_t BLEDescriptor::getmaxlen() {
 	return m_attr_max_len;
@@ -156,7 +163,7 @@ void BLEDescriptor::executeCreate(BLECharacteristic* pCharacteristic) {
 	desc.flags =  getflags();
 	desc.uuid_length = getUUID().getNative()->len;
 	memcpy(&(desc.uuid), &(getUUID().getNative()->uuid), desc.uuid_length);
-	desc.p_value = getattrvalue();
+	desc.p_value = getValue();
 	desc.vlaue_length = getmaxlen();
 	desc.permissions =   getpermissions();
 	uint8_t desc_handle = ble_create_desc(m_pCharacteristic->getService()->getgiff(), m_pCharacteristic->getHandle(), desc);

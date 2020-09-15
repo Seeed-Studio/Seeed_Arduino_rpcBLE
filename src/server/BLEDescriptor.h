@@ -30,6 +30,12 @@ public:
     uint16_t getHandle();
 	void setValue(uint8_t* data, size_t size);              // Set the value of the descriptor as a pointer to data.
 	void setValue(std::string value);
+
+	uint16_t getflags();
+	uint8_t* getValue();
+	uint16_t getmaxlen();
+	uint32_t getpermissions();
+	
 private:
 	friend class BLEDescriptorMap;
 	friend class BLECharacteristic;
@@ -49,10 +55,7 @@ private:
 	BLEFreeRTOS::Semaphore     m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 
 	void executeCreate(BLECharacteristic* pCharacteristic);
-    uint16_t getflags();
-	uint8_t* getattrvalue();
-	uint16_t getmaxlen();
-	uint32_t getpermissions();
+
 
 }; // BLEDescriptor
 
