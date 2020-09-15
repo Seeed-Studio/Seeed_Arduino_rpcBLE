@@ -151,6 +151,8 @@ void BLEAdvertising::setAdvertisementData(BLEAdvertisementData& advertisementDat
 	log_v("<< setAdvertisementData");
 #endif
     memcpy(_advData, (uint8_t*)advertisementData.getPayload().data(), advertisementData.getPayload().length());
+    le_adv_set_param(GAP_PARAM_ADV_DATA, _advDataSize, _advData);
+    m_customAdvData = true; 
 } // setAdvertisementData
 
 
@@ -171,6 +173,8 @@ void BLEAdvertising::setScanResponseData(BLEAdvertisementData& advertisementData
 	log_v("<< setScanResponseData");
 #endif 
     memcpy(_scanRspData, (uint8_t*)advertisementData.getPayload().data(), advertisementData.getPayload().length());
+    le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
+    m_customScanResponseData = true;
     //le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, advertisementData.getPayload().length(), (uint8_t*)advertisementData.getPayload().data());
    // setScanRspData(beacon.getScanRsp(), beacon.scanRspSize);
 } // setScanResponseData
@@ -201,9 +205,14 @@ void BLEAdvertising::start() {
     le_adv_set_param(GAP_PARAM_ADV_FILTER_POLICY, sizeof(_advFilterPolicy), &(_advFilterPolicy));
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(_advIntMin), &(_advIntMin));
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(_advIntMax), &(_advIntMax));
-    le_adv_set_param(GAP_PARAM_ADV_DATA, _advDataSize, _advData);
-    le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
-
+    if(!m_customAdvData){
+        le_adv_set_param(GAP_PARAM_ADV_DATA, _advDataSize, _advData);
+    }
+    
+    if(!m_customScanResponseData){
+        le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
+    }
+    
     le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(_slaveInitMtuReq), &_slaveInitMtuReq);
 	Serial.printf("BLEAdvertising::end()\n\r");
     if (!ble_start_flags)
@@ -432,6 +441,7 @@ void BLEAdvertisementData::addData(std::string data) {
 	if ((m_payload.length() + data.length()) > 31) {
 		return;
 	}
+    Serial.printf("BLEAdvertisementData  addData\n\r");
 	m_payload.append(data);
 } // addData
 
