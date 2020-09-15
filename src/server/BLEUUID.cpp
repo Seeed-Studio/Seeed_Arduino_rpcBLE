@@ -330,3 +330,43 @@ BLEUUID::BLEUUID(std::string value) {
 		m_valueSet = false;
 	}
 } //BLEUUID(std::string)
+
+
+/**
+ * @brief Create a UUID from 16 bytes of memory.
+ *
+ * @param [in] pData The pointer to the start of the UUID.
+ * @param [in] size The size of the data.
+ * @param [in] msbFirst Is the MSB first in pData memory?
+ */
+BLEUUID::BLEUUID(uint8_t* pData, size_t size, bool msbFirst) {
+	if (size != 16) {
+		return;
+	}
+	m_uuid.len = UUID_LEN_128;
+	if (msbFirst) {
+		memrcpy(m_uuid.uuid.uuid128, pData, 16);
+	} else {
+		memcpy(m_uuid.uuid.uuid128, pData, 16);
+	}
+	m_valueSet = true;
+} // BLEUUID
+
+
+/**
+ * @brief Get the number of bits in this uuid.
+ * @return The number of bits in the UUID.  One of 16, 32 or 128.
+ */
+uint8_t BLEUUID::bitSize() {
+	if (!m_valueSet) return 0;
+	switch (m_uuid.len) {
+		case UUID_LEN_16:
+			return 16;
+		case UUID_LEN_32:
+			return 32;
+		case UUID_LEN_128:
+			return 128;
+		default:
+			return 0;
+	} // End of switch
+} // bitSize
