@@ -26,10 +26,21 @@ typedef enum {
  */
 class BLEAdvertisementData {
 public:
-	
+	void setAppearance(uint16_t appearance);
+    void setCompleteServices(BLEUUID uuid);
+    void setFlags(uint8_t);
+    void setManufacturerData(std::string data);
+    void setName(std::string name);
+    void setPartialServices(BLEUUID uuid);
+    void setServiceData(BLEUUID uuid, std::string data);
+    void setShortName(std::string name);
+    void        addData(std::string data);  // Add data to the payload.
+    std::string getPayload();               // Retrieve the current advert payload.
+
 
 private:
-
+   friend class BLEAdvertising;
+   std::string m_payload;   // The payload of the advertisement.
 };   // BLEAdvertisementData
 
 
@@ -43,6 +54,7 @@ class BLEAdvertising {
 public:
 	BLEAdvertising();
 	void start();
+    void stop();
     void addServiceUUID(const char* serviceUUID);
 	uint8_t addServiceUUID(BLEUUID serviceUUID);
 	void setScanResponse(bool);
@@ -53,6 +65,10 @@ public:
     void setAdvData();
 
     void addData(const uint8_t* data, uint8_t size,ble_adv_data_type type);
+
+    void setAdvertisementData(BLEAdvertisementData& advertisementData);
+    void setScanResponseData(BLEAdvertisementData& advertisementData);
+    void setAdvertisementType(uint8_t adv_type);
     
 private:   
     uint8_t _data[31] ={0};     // array for storing formatted advertising data for receiving and sending
