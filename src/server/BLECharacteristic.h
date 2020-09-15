@@ -102,7 +102,9 @@ private:
 	uint8_t             getHandle();
 	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 	BLEFreeRTOS::Semaphore m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
-	BLEFreeRTOS::Semaphore m_semaphoreSetValue  = BLEFreeRTOS::Semaphore("SetValue"); 
+	BLEFreeRTOS::Semaphore m_semaphoreSetValue  = BLEFreeRTOS::Semaphore("SetValue");
+	BLEFreeRTOS::Semaphore m_semaphoreConfEvt   = BLEFreeRTOS::Semaphore("ConfEvt");
+
 
 
 }; // BLECharacteristic

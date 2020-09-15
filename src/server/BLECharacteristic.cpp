@@ -14,6 +14,7 @@
 #include "BLE2902.h"
 
 #define NULL_HANDLE (0xffff)
+bool isNotify = false;
 
 static BLECharacteristicCallbacks defaultCallback; //null-object-pattern
 
@@ -257,7 +258,8 @@ std::string BLECharacteristic::getValue() {
 void BLECharacteristic::notify(bool is_notification) {
 //	assert(getService() != nullptr);
 //	assert(getService()->getServer() != nullptr);
-
+    if(isNotify == true){
+    Serial.printf("BLECharacteristic   notify  into1 \n\r");
 	m_pCallbacks->onNotify(this);   // Invoke the notify callback.
 
 	// Test to see if we have a 0x2902 descriptor.  If we do, then check to see if notification is enabled
@@ -266,6 +268,7 @@ void BLECharacteristic::notify(bool is_notification) {
 	BLE2902 *p2902 = (BLE2902*)getDescriptorByUUID((uint16_t)0x2902);
 	if(is_notification) {
 		if (p2902 != nullptr && !p2902->getNotifications()) {
+			Serial.printf("BLECharacteristic   notify  into2 \n\r");
 			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_NOTIFY_DISABLED, 0);   // Invoke the notify callback.
 			return;
 		}
@@ -276,6 +279,7 @@ void BLECharacteristic::notify(bool is_notification) {
 			return;
 		}
 	}
+	Serial.printf("BLECharacteristic   notify  into \n\r");
 	for (auto &myPair : getService()->getServer()->getPeerDevices(false)) {
 		uint16_t _mtu = (myPair.second.mtu);
 		size_t length = m_value.getValue().length();
@@ -293,8 +297,12 @@ void BLECharacteristic::notify(bool is_notification) {
 			return;
 		}
 #endif
-        server_send_data(0, getService()->getgiff(), getHandle(),(uint8_t*)m_value.getValue().data(), 1, GATT_PDU_TYPE_ANY);
+        Serial.printf("BLECharacteristic  getgiff():%d getHandle():%d\n\r", getService()->getgiff(), getHandle());
+//		m_semaphoreConfEvt.take("indicate");
+        server_send_data(0, getService()->getHandle(), getHandle(),(uint8_t*)m_value.getValue().data(), (uint16_t)length, GATT_PDU_TYPE_ANY);
+//		m_semaphoreConfEvt.wait("indicate");
         m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::SUCCESS_NOTIFY, 0);   // Invoke the notify callback.
+	}
 	}
 } // Notify
 
@@ -363,6 +371,14 @@ void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_da
     {
     case SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION:
     {
+		if(cb_data->cb_data_context.cccd_update_data.cccbits == 1)
+		{
+			isNotify = true;
+		}else
+		{
+			isNotify = true;	
+		}
+				
         break;
     }
     case SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE:
