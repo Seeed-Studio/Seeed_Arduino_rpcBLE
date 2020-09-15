@@ -199,6 +199,7 @@ void BLEService::start() {
 
 	//****************************启动service服务***************************************************************
 	T_SERVER_ID handle = ble_service_start(getgiff());
+	m_handle = handle;
 	Serial.printf("ble_service_start: %d", handle);
 
 //	m_semaphoreStartEvt.wait("start");
