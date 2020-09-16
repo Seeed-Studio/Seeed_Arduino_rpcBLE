@@ -106,16 +106,16 @@ BLEServerCallbacks* BLEServer::getCallbacks() {
 
 
 void BLEServerCallbacks::onConnect(BLEServer* pServer) {
-	Serial.printf("BLEServerCallbacks", ">> onConnect(): Default");
+//	Serial.printf("BLEServerCallbacks", ">> onConnect(): Default");
 //	Serial.printf("BLEServerCallbacks", "Device: %s", BLEDevice::toString().c_str());
-	Serial.printf("BLEServerCallbacks", "<< onConnect()");
+//	Serial.printf("BLEServerCallbacks", "<< onConnect()");
 } // onConnect
 
 
 void BLEServerCallbacks::onDisconnect(BLEServer* pServer) {
-	Serial.printf("BLEServerCallbacks", ">> onDisconnect(): Default");
+//	Serial.printf("BLEServerCallbacks", ">> onDisconnect(): Default");
 //	Serial.printf("BLEServerCallbacks", "Device: %s", BLEDevice::toString().c_str());
-	Serial.printf("BLEServerCallbacks", "<< onDisconnect()");
+//	Serial.printf("BLEServerCallbacks", "<< onDisconnect()");
 } // onDisconnect
 
 
