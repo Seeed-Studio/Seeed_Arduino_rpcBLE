@@ -17,6 +17,7 @@ BLEScan*   BLEDevice::_pBLEScan   = nullptr;
 BLEClient* BLEDevice::m_pClient = nullptr;
 BLEServer* BLEDevice::m_pServer = nullptr;
 BLEAdvertising* BLEDevice::m_bleAdvertising = nullptr;
+std::string BLEDevice::ble_name = "";
 T_CLIENT_ID BLEClient::m_gattc_if = 0;
 
 std::map<uint16_t, conn_status_t> BLEDevice::m_connectedClientsMap;
@@ -96,26 +97,22 @@ void BLEDevice::startAdvertising() {
     ble_init();
     ble_server_init(BLE_SERVER_MAX_APPS);
     ble_client_init(BLE_CLIENT_MAX_APPS);
-  
     /*
      *  Register the Bluetooth callback function
      */
     le_register_app_cb(BLEDevice::gapEventHandler);
     le_register_msg_handler(BLEDevice::ble_handle_gap_msg);
     le_register_gattc_cb(BLEDevice::gattClientEventHandler);
-    
-    
-
-    //************注册server的回调函数****************************************************************
     le_register_gatts_cb(BLEDevice::gattServerEventHandler);
 
     /*
      * Set Bluetooth device  name
      */
+    ble_name = deviceName;
     uint8_t  device_name[GAP_DEVICE_NAME_LEN] = {0};
     memcpy(device_name,deviceName.c_str(),GAP_DEVICE_NAME_LEN);
     le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN,device_name);
-  
+    
 	/*
      * Activate the Bluetooth controller
      */

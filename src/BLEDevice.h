@@ -26,14 +26,15 @@ public:
     static BLEScan*    getScan();         // Get the scan object
 	static void        init(std::string deviceName);   // Initialize the local BLE environment.
 	static std::map<uint16_t, conn_status_t> getPeerDevices(bool client);
-	static uint16_t 	m_appId;
+	
 	static void addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
 	static void removePeerDevice(uint16_t conn_id, bool client);
 
 	static BLEAdvertising* 	getAdvertising();
 	static void		   		startAdvertising();
 	static BLEServer*       getServer();
-
+    static uint16_t 	m_appId;
+    static std::string  ble_name;
 private:
     friend class BLEClient;
 	friend class BLEServer;
@@ -45,11 +46,7 @@ private:
   
 	static T_APP_RESULT gapEventHandler(uint8_t cb_type, void *p_cb_data);
 	static T_APP_RESULT gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data );
-	static void ble_handle_gap_msg(T_IO_MSG *p_gap_msg);
-
-
-
-//*********************ble server eventhandler*****************************************************
+	static void         ble_handle_gap_msg(T_IO_MSG *p_gap_msg);
 	static T_APP_RESULT gattServerEventHandler(T_SERVER_ID service_id, void *p_data);
 };
 

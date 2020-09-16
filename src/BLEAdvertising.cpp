@@ -18,6 +18,7 @@
  */
 
 #include "BLEAdvertising.h"
+#include "BLEDevice.h"
 bool ble_start_flags  = false;
 
 /**
@@ -194,7 +195,7 @@ void BLEAdvertising::setAdvertisementType(uint8_t advType){
 void BLEAdvertising::start() {
 	
 	addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
-	addCompleteName("SEEED_BLE_DEV");
+	addCompleteName(BLEDevice::ble_name.c_str());
 	setAdvData();
 	Serial.printf("BLEAdvertising::start()\n\r");
 
