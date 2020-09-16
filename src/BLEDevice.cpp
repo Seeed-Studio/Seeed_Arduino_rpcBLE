@@ -1,22 +1,19 @@
-#include <map>                 // Part of C++ Standard library
-#include <sstream>             // Part of C++ Standard library
-#include <iomanip>             // Part of C++ Standard library
+#include <map>     // Part of C++ Standard library
+#include <sstream> // Part of C++ Standard library
+#include <iomanip> // Part of C++ Standard library
 
 #include "BLEDevice.h"
 #include <Arduino.h>
-
-
-
 
 /**
  * Singletons for the BLEDevice.
  */
 
-bool       initialized          = false;  
-BLEScan*   BLEDevice::_pBLEScan   = nullptr;
-BLEClient* BLEDevice::m_pClient = nullptr;
-BLEServer* BLEDevice::m_pServer = nullptr;
-BLEAdvertising* BLEDevice::m_bleAdvertising = nullptr;
+bool initialized = false;
+BLEScan *BLEDevice::_pBLEScan = nullptr;
+BLEClient *BLEDevice::m_pClient = nullptr;
+BLEServer *BLEDevice::m_pServer = nullptr;
+BLEAdvertising *BLEDevice::m_bleAdvertising = nullptr;
 std::string BLEDevice::ble_name = "";
 T_CLIENT_ID BLEClient::m_gattc_if = 0;
 
@@ -36,22 +33,23 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_SLAVE; // 0:close 1:server 2:cli
  * @brief Create a new instance of a server.
  * @return A new instance of the server.
  */
-/* STATIC */ BLEServer* BLEDevice::createServer() {
-	m_pServer = new BLEServer();
-//	m_pServer->createApp(m_appId++);
-    Serial.printf("BLE create Server\n\r"); 
-	return m_pServer;
+/* STATIC */ BLEServer *BLEDevice::createServer()
+{
+    m_pServer = new BLEServer();
+    //	m_pServer->createApp(m_appId++);
+    Serial.printf("BLE create Server\n\r");
+    return m_pServer;
 } // createServer
-
 
 /**
  * @brief Create a new instance of a client.
  * @return A new instance of the client.
  */
-/* STATIC */ BLEClient* BLEDevice::createClient() {
-	m_pClient = new BLEClient();
+/* STATIC */ BLEClient *BLEDevice::createClient()
+{
+    m_pClient = new BLEClient();
 
-	return m_pClient;
+    return m_pClient;
 } // createClient
 
 /**
@@ -59,84 +57,90 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_SLAVE; // 0:close 1:server 2:cli
  * @return The scanning object reference.  This is a singleton object.  The caller should not
  * try and release/delete it.
  */
-/* STATIC */ BLEScan* BLEDevice::getScan() {
-	if (_pBLEScan == nullptr) {
-		_pBLEScan = new BLEScan();
-	}
-	return _pBLEScan;
+/* STATIC */ BLEScan *BLEDevice::getScan()
+{
+    if (_pBLEScan == nullptr)
+    {
+        _pBLEScan = new BLEScan();
+    }
+    return _pBLEScan;
 } // getScan
 
-/* STATIC */ BLEServer* BLEDevice::getServer() {
-	return m_pServer;
+/* STATIC */ BLEServer *BLEDevice::getServer()
+{
+    return m_pServer;
 } // getScan
 
-
-
-BLEAdvertising* BLEDevice::getAdvertising() {
-	if(m_bleAdvertising == nullptr) {
-		m_bleAdvertising = new BLEAdvertising();
-	}
-	return m_bleAdvertising; 
+BLEAdvertising *BLEDevice::getAdvertising()
+{
+    if (m_bleAdvertising == nullptr)
+    {
+        m_bleAdvertising = new BLEAdvertising();
+    }
+    return m_bleAdvertising;
 }
 
-void BLEDevice::startAdvertising() {
-	getAdvertising()->start();
+void BLEDevice::startAdvertising()
+{
+    getAdvertising()->start();
 } // startAdvertising
-
 
 /**
  * @brief Initialize the %BLE environment.
  * @param deviceName The device name of the device.
  */
-/* STATIC */ void BLEDevice::init(std::string deviceName) {
-	if(!initialized){
-		initialized = true; // Set the initialization flag to ensure we are only initialized once.  
-	/*
+/* STATIC */ void BLEDevice::init(std::string deviceName)
+{
+    if (!initialized)
+    {
+        initialized = true; // Set the initialization flag to ensure we are only initialized once.
+                            /*
 	 * Bluetooth controller initialization
 	 */
-    ble_init();
-    ble_server_init(BLE_SERVER_MAX_APPS);
-    ble_client_init(BLE_CLIENT_MAX_APPS);
-    /*
+        ble_init();
+        ble_server_init(BLE_SERVER_MAX_APPS);
+        ble_client_init(BLE_CLIENT_MAX_APPS);
+        /*
      *  Register the Bluetooth callback function
      */
-    le_register_app_cb(BLEDevice::gapEventHandler);
-    le_register_msg_handler(BLEDevice::ble_handle_gap_msg);
-    le_register_gattc_cb(BLEDevice::gattClientEventHandler);
-    le_register_gatts_cb(BLEDevice::gattServerEventHandler);
+        le_register_app_cb(BLEDevice::gapEventHandler);
+        le_register_msg_handler(BLEDevice::ble_handle_gap_msg);
+        le_register_gattc_cb(BLEDevice::gattClientEventHandler);
+        le_register_gatts_cb(BLEDevice::gattServerEventHandler);
 
-    /*
+        /*
      * Set Bluetooth device  name
      */
-    ble_name = deviceName;
-    uint8_t  device_name[GAP_DEVICE_NAME_LEN] = {0};
-    memcpy(device_name,deviceName.c_str(),GAP_DEVICE_NAME_LEN);
-    le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN,device_name);
-    
-	/*
+        ble_name = deviceName;
+        uint8_t device_name[GAP_DEVICE_NAME_LEN] = {0};
+        memcpy(device_name, deviceName.c_str(), GAP_DEVICE_NAME_LEN);
+        le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN, device_name);
+
+        /*
      * Activate the Bluetooth controller
      */
-	//ble_start();
-	}
+        //ble_start();
+    }
     Serial.printf("BLE init success\n\r");
-	return;
+    return;
 } // init
 
 /**
  * @brief Handle GAP events.
  */
 /* STATIC */ T_APP_RESULT BLEDevice::gapEventHandler(
-	  uint8_t cb_type,
-	  void *p_cb_data) {
-	T_APP_RESULT ret = APP_RESULT_SUCCESS;
-	  
-	if (BLEDevice::_pBLEScan != nullptr) {
-		BLEDevice::getScan()->gapCallbackDefault(cb_type,p_cb_data);
-	}
-	
-	return ret;
-} // gapEventHandler
+    uint8_t cb_type,
+    void *p_cb_data)
+{
+    T_APP_RESULT ret = APP_RESULT_SUCCESS;
 
+    if (BLEDevice::_pBLEScan != nullptr)
+    {
+        BLEDevice::getScan()->gapCallbackDefault(cb_type, p_cb_data);
+    }
+
+    return ret;
+} // gapEventHandler
 
 /**
  * @brief Handle GATT client events.
@@ -147,38 +151,42 @@ void BLEDevice::startAdvertising() {
  * @param [in] gattc_if
  * @param [in] param
  */
-/* STATIC */ T_APP_RESULT BLEDevice::gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data) {
+/* STATIC */ T_APP_RESULT BLEDevice::gattClientEventHandler(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data)
+{
     T_APP_RESULT result = APP_RESULT_SUCCESS;
-	for(auto &myPair : BLEDevice::getPeerDevices(true)) {
-		conn_status_t conn_status = (conn_status_t)myPair.second;
-		if(((BLEClient*)conn_status.peer_device)->getGattcIf() == client_id || ((BLEClient*)conn_status.peer_device)->getGattcIf() == 0xff || client_id == 0xff){
-			((BLEClient*)conn_status.peer_device)->clientCallbackDefault(client_id,conn_id,  p_data);
-		}
-	}
-	
+    for (auto &myPair : BLEDevice::getPeerDevices(true))
+    {
+        conn_status_t conn_status = (conn_status_t)myPair.second;
+        if (((BLEClient *)conn_status.peer_device)->getGattcIf() == client_id || ((BLEClient *)conn_status.peer_device)->getGattcIf() == 0xff || client_id == 0xff)
+        {
+            ((BLEClient *)conn_status.peer_device)->clientCallbackDefault(client_id, conn_id, p_data);
+        }
+    }
+
     return result;
 } // gattClientEventHandler
 
 /* multi connect support */
 /* requires a little more work */
-std::map<uint16_t, conn_status_t> BLEDevice::getPeerDevices(bool _client) {
-	return m_connectedClientsMap;
+std::map<uint16_t, conn_status_t> BLEDevice::getPeerDevices(bool _client)
+{
+    return m_connectedClientsMap;
 }
 
-void BLEDevice::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
-	conn_status_t status = {
-		.peer_device = peer,
-		.connected = true,
-		.mtu = 23
-	};
-    
-	m_connectedClientsMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
-}
-void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
-	if(m_connectedClientsMap.find(conn_id) != m_connectedClientsMap.end())
-		m_connectedClientsMap.erase(conn_id);
-}
+void BLEDevice::addPeerDevice(void *peer, bool _client, uint16_t conn_id)
+{
+    conn_status_t status = {
+        .peer_device = peer,
+        .connected = true,
+        .mtu = 23};
 
+    m_connectedClientsMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
+}
+void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client)
+{
+    if (m_connectedClientsMap.find(conn_id) != m_connectedClientsMap.end())
+        m_connectedClientsMap.erase(conn_id);
+}
 
 /**
  * @brief Handle GATT server events.
@@ -188,20 +196,19 @@ void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
  * @param [in] param Parameters for the event.
  */
 /* STATIC */ T_APP_RESULT BLEDevice::gattServerEventHandler(
-   T_SERVER_ID service_id,
-   void *p_data
-) {	
+    T_SERVER_ID service_id,
+    void *p_data)
+{
     T_APP_RESULT result = APP_RESULT_SUCCESS;
-    if (BLEDevice::m_pServer != nullptr) {
+    if (BLEDevice::m_pServer != nullptr)
+    {
         Serial.printf("into device :: gattServerEventHandler\n\r");
 
-		BLEDevice::m_pServer->handleGATTServerEvent(service_id, p_data);
-	}
+        BLEDevice::m_pServer->handleGATTServerEvent(service_id, p_data);
+    }
     return APP_RESULT_SUCCESS;
 
 } // gattServerEventHandler
-
-
 
 /**
  * @brief    All the BT GAP MSG are pre-handled in this function.
@@ -210,7 +217,7 @@ void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client) {
  * @param[in] p_gap_msg Pointer to GAP msg
  * @return   void
  */
-void  BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
+void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
 {
     T_LE_GAP_MSG gap_msg;
     uint8_t conn_id;
@@ -311,7 +318,6 @@ void  BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     }
 }
 
-
 /**
  * @brief    Handle msg GAP_MSG_LE_CONN_STATE_CHANGE
  * @note     All the gap conn state events are pre-handled in this function.
@@ -324,94 +330,101 @@ void  BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
 void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uint16_t disc_cause)
 {
 
-//    Serial.printf("ble_conn_state_evt_handler: conn_id %d old_state %d new_state %d, disc_cause 0x%x\n\r", conn_id, ble_gap_conn_state, new_state, disc_cause);
+    //    Serial.printf("ble_conn_state_evt_handler: conn_id %d old_state %d new_state %d, disc_cause 0x%x\n\r", conn_id, ble_gap_conn_state, new_state, disc_cause);
 
-    if (ble_dev_role == RPC_GAP_LINK_ROLE_MASTER)
+    //     if (ble_dev_role == RPC_GAP_LINK_ROLE_MASTER)
+    //     {
+
+    //         if (conn_id >= BLE_LE_MAX_LINKS)
+    //         {
+    //             return;
+    //         }
+
+    //         ble_clinet_link_table[conn_id].conn_state = new_state;
+
+    //         switch (new_state)
+    //         {
+    //         case GAP_CONN_STATE_DISCONNECTED:
+    //         {
+    //             BLEDevice::getServer()->getCallbacks()->onDisconnect(BLEDevice::getServer());
+    //             BLEDevice::getServer()->removePeerDevice(conn_id, false);
+    //             if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE)) && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
+    //             {
+    //                 Serial.printf("connection lost, conn_id %d, cause 0x%x\n\r", conn_id, disc_cause);
+    //             }
+    //             Serial.printf("[BLE Device] Disconnected conn_id %d\n\r", conn_id);
+    //             memset(&ble_clinet_link_table[conn_id], 0, sizeof(T_APP_LINK));
+    //             break;
+    //         }
+    //         case GAP_CONN_STATE_CONNECTED:
+    //         {
+    //             //m_connId = conn_id;
+    //             Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED\n\r");
+    // //            BLEDevice::getServer()->addPeerDevice((void*)BLEDevice::getServer(), false, conn_id);
+    // //            BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
+
+    //             le_get_conn_addr(conn_id, ble_clinet_link_table[conn_id].bd_addr, (uint8_t *)&ble_clinet_link_table[conn_id].bd_type);
+    //             Serial.printf("[BLE Device] Connected conn_id %d\n\r", conn_id);
+    //             {
+    //                 uint8_t tx_phy;
+    //                 uint8_t rx_phy;
+    //                 le_get_conn_param(GAP_PARAM_CONN_TX_PHY_TYPE, &tx_phy, conn_id);
+    //                 le_get_conn_param(GAP_PARAM_CONN_RX_PHY_TYPE, &rx_phy, conn_id);
+    //                 Serial.printf("GAP_CONN_STATE_CONNECTED: tx_phy %d, rx_phy %d\n\r", tx_phy, rx_phy);
+    //             }
+    //             break;
+    //         }
+    //         default:
+    //             break;
+    //         }
+    //     }
+    //     else
+    //     {
+    switch (new_state)
     {
-
-        if (conn_id >= BLE_LE_MAX_LINKS)
-        {
-            return;
-        }
-
-        ble_clinet_link_table[conn_id].conn_state = new_state;
-
-        switch (new_state)
-        {
-        case GAP_CONN_STATE_DISCONNECTED:
-        {
-            BLEDevice::getServer()->getCallbacks()->onDisconnect(BLEDevice::getServer());
-            BLEDevice::getServer()->removePeerDevice(conn_id, false);
-            if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE)) && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
-            {
-                Serial.printf("connection lost, conn_id %d, cause 0x%x\n\r", conn_id, disc_cause);
-            }
-            Serial.printf("[BLE Device] Disconnected conn_id %d\n\r", conn_id);
-            memset(&ble_clinet_link_table[conn_id], 0, sizeof(T_APP_LINK));
-            break;
-        }
-        case GAP_CONN_STATE_CONNECTED:
-        {
-            //m_connId = conn_id;
-            Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED\n\r");
-            BLEDevice::getServer()->addPeerDevice((void*)BLEDevice::getServer(), false, conn_id);
-            BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
-
-            le_get_conn_addr(conn_id, ble_clinet_link_table[conn_id].bd_addr, (uint8_t *)&ble_clinet_link_table[conn_id].bd_type);
-            Serial.printf("[BLE Device] Connected conn_id %d\n\r", conn_id);
-            {
-                uint8_t tx_phy;
-                uint8_t rx_phy;
-                le_get_conn_param(GAP_PARAM_CONN_TX_PHY_TYPE, &tx_phy, conn_id);
-                le_get_conn_param(GAP_PARAM_CONN_RX_PHY_TYPE, &rx_phy, conn_id);
-                Serial.printf("GAP_CONN_STATE_CONNECTED: tx_phy %d, rx_phy %d\n\r", tx_phy, rx_phy);
-            }
-            break;
-        }
-        default:
-            break;
-        }
-    }
-    else
+    case GAP_CONN_STATE_DISCONNECTED:
     {
-        switch (new_state)
+        if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE)) && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
         {
-        case GAP_CONN_STATE_DISCONNECTED:
-        {
-            if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE)) && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
-            {
 
-                Serial.printf("connection lost cause 0x%x\n\r", disc_cause);
-            }
-            Serial.printf("[BLE Device] BT Disconnected, start ADV\n\r\n\r");
-            le_adv_start();
-            break;
+            Serial.printf("connection lost cause 0x%x\n\r", disc_cause);
         }
-        case GAP_CONN_STATE_CONNECTED:
-        {
-            Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED111111\n\r");
-            BLEDevice::getServer()->addPeerDevice((void*)BLEDevice::getServer(), false, conn_id);
-            BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
-            uint16_t conn_interval;
-            uint16_t conn_latency;
-            uint16_t conn_supervision_timeout;
-            uint8_t remote_bd[6];
-            T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
-
-            le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &conn_interval, conn_id);
-            le_get_conn_param(GAP_PARAM_CONN_LATENCY, &conn_latency, conn_id);
-            le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &conn_supervision_timeout, conn_id);
-            le_get_conn_addr(conn_id, remote_bd, (uint8_t *)&remote_bd_type);
-
-            Serial.printf("GAP_CONN_STATE_CONNECTED:remote_bd %x:%x:%x:%x:%x:%x, remote_addr_type %d, conn_interval 0x%x, conn_latency 0x%x, conn_supervision_timeout 0x%x\n\r", remote_bd[0], remote_bd[1], remote_bd[2], remote_bd[3], remote_bd[4], remote_bd[5], remote_bd_type, conn_interval, conn_latency, conn_supervision_timeout);
-            Serial.printf("[BLE Device] BT Connected\n\r\n\r");
-            break;
-        }
-        default:
-            break;
-        }
+        Serial.printf("[BLE Device] BT Disconnected, start ADV\n\r\n\r");
+     
+        break;
     }
-    ble_gap_conn_state = new_state;
+    case GAP_CONN_STATE_CONNECTED:
+    {
+        Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED111111\n\r");
+        if (BLEDevice::getServer() != nullptr)
+        {
+            BLEDevice::getServer()->addPeerDevice((void *)BLEDevice::getServer(), false, conn_id);
+            if (BLEDevice::getServer()->getCallbacks() != nullptr)
+            {
+                BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
+            }
+        }
+
+        // uint16_t conn_interval;
+        // uint16_t conn_latency;
+        // uint16_t conn_supervision_timeout;
+        // uint8_t remote_bd[6];
+        // T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
+
+        // le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &conn_interval, conn_id);
+        // le_get_conn_param(GAP_PARAM_CONN_LATENCY, &conn_latency, conn_id);
+        // le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &conn_supervision_timeout, conn_id);
+        // le_get_conn_addr(conn_id, remote_bd, (uint8_t *)&remote_bd_type);
+
+        // Serial.printf("GAP_CONN_STATE_CONNECTED:remote_bd %x:%x:%x:%x:%x:%x, remote_addr_type %d, conn_interval 0x%x, conn_latency 0x%x, conn_supervision_timeout 0x%x\n\r", remote_bd[0], remote_bd[1], remote_bd[2], remote_bd[3], remote_bd[4], remote_bd[5], remote_bd_type, conn_interval, conn_latency, conn_supervision_timeout);
+        // Serial.printf("[BLE Device] BT Connected\n\r\n\r");
+        break;
+    }
+    default:
+        break;
+    }
+    //}
+    // ble_gap_conn_state = new_state;
 }
 
 /**
