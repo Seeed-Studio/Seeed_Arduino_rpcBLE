@@ -73,7 +73,7 @@ public:
 private:
     bool                 m_customAdvData = false;  // Are we using custom advertising data?
 	bool                 m_customScanResponseData = false;
-    
+
     uint8_t _data[31] ={0};     // array for storing formatted advertising data for receiving and sending
     uint8_t _dataSize = 0;
 
@@ -110,7 +110,6 @@ private:
                                     /* Local name */
                                     0x0E,             /* length */
                                     GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-                                    'S', 'E', 'E', 'E', 'D', '_', 'B', 'L', 'E', '_', 'D', 'E', 'V',
                                     };
 	
 };
