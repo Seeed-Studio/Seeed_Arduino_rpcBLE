@@ -16,9 +16,10 @@
  * set in the data will be advertised.
  *
  */
-
+#define TAG "BLEAdvertising"
 #include "BLEAdvertising.h"
 #include "BLEDevice.h"
+#include "rpc_unified_log.h"
 bool ble_start_flags  = false;
 
 /**
@@ -30,11 +31,25 @@ BLEAdvertising::BLEAdvertising() {
 } // BLEAdvertising
 
 
+T_APP_RESULT BLEAdvertising::handleGAPEvent(uint8_t cb_type, void *p_cb_data) {
+	T_APP_RESULT result = APP_RESULT_SUCCESS;
+    T_LE_CB_DATA *p_data = (T_LE_CB_DATA *)p_cb_data;
+	switch (cb_type) {
+		case GAP_MSG_LE_ADV_UPDATE_PARAM: {
+			break;
+		} // GAP_MSG_LE_READ_RSSI
+
+		default:
+			break;
+	}
+    return result;
+} // handleGAPEvent
+
+
 void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_type type) {
 	if (type == adv_data)
 	{
 		if ((31 - _dataSize) < size) {
-        printf("Insufficient space in advertising data packet\r\n");
         return;
         }
         int i;
@@ -45,7 +60,6 @@ void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_typ
 	}else if (type == adv_scan_data)
 	{
 		if ((31 - scan_dataSize) < size) {
-        printf("Insufficient space in advertising data packet\r\n");
         return;
         }
         int i;
@@ -62,9 +76,6 @@ void BLEAdvertising::addData(const uint8_t* data, uint8_t size, ble_adv_data_typ
  * @param [in] serviceUUID The string representation of the service to expose.
  */
 void BLEAdvertising::addServiceUUID(const char* serviceUUID) {
-	BLEUUID bbb = BLEUUID(serviceUUID);
-	Serial.printf("service uuid: \n\r");
-	Serial.println(bbb.toString().c_str());
 	addServiceUUID(BLEUUID(serviceUUID));
 } // addServiceUUID
 
@@ -73,10 +84,7 @@ void BLEAdvertising::addServiceUUID(const char* serviceUUID) {
  * @param [in] serviceUUID The UUID of the service to expose.
  */
 uint8_t BLEAdvertising::addServiceUUID(BLEUUID serviceUUID) {
-//	m_serviceUUIDs.push_back(serviceUUID);
     _serviceList[_serviceCount++] = (serviceUUID);
-	Serial.printf("_serviceList[_serviceCount++] \n\r");
-	Serial.printf("serviceUUID.getNative()->len: %d \n\r",serviceUUID.getNative()->len);
     switch (serviceUUID.getNative()->len) {
         case 2: {
             uint8_t data[4] = {3, GAP_ADTYPE_16BIT_COMPLETE};
@@ -94,19 +102,11 @@ uint8_t BLEAdvertising::addServiceUUID(BLEUUID serviceUUID) {
             uint8_t data[18] = {17, GAP_ADTYPE_128BIT_COMPLETE};
             memcpy(&(data[2]), &(serviceUUID.getNative()->uuid), 16);  
             addData(data, 18, adv_scan_data);
-			Serial.printf("data:");
-	        for(int i = 0; i < 18; i++)
-	        {
-		       Serial.printf("%02x ",data[i]);
-	        }
-	        Serial.printf("\n\r");
-
             break;
         }
         default:
             break;
     }
-	Serial.printf("scan_dataSize:%d\n\r",scan_dataSize);
     return scan_dataSize;   
 } // addServiceUUID
 
@@ -117,12 +117,6 @@ void BLEAdvertising::setScanResponse(bool set) {
 	{
 		
 		memcpy(_scanRspData, scan_data, scan_dataSize);
-		Serial.printf("_scanRspData:");
-	    for(int i = 0; i < 31; i++)
-	    {
-		    Serial.printf("%02x ",_scanRspData[i]);
-	    }
-	    Serial.printf("\n\r");
         _scanRspDataSize = scan_dataSize;
 	}
 }
@@ -140,17 +134,6 @@ void BLEAdvertising::setMinPreferred(uint16_t mininterval) {
  * @param [in] advertisementData The data to be advertised.
  */
 void BLEAdvertising::setAdvertisementData(BLEAdvertisementData& advertisementData) {
-#if 0
-	log_v(">> setAdvertisementData");
-	esp_err_t errRc = ::esp_ble_gap_config_adv_data_raw(
-		(uint8_t*)advertisementData.getPayload().data(),
-		advertisementData.getPayload().length());
-	if (errRc != ESP_OK) {
-		log_e("esp_ble_gap_config_adv_data_raw: %d %s", errRc, GeneralUtils::errorToString(errRc));
-	}
-	m_customAdvData = true;   // Set the flag that indicates we are using custom advertising data.
-	log_v("<< setAdvertisementData");
-#endif
     memcpy(_advData, (uint8_t*)advertisementData.getPayload().data(), advertisementData.getPayload().length());
     le_adv_set_param(GAP_PARAM_ADV_DATA, _advDataSize, _advData);
     m_customAdvData = true; 
@@ -161,18 +144,7 @@ void BLEAdvertising::setAdvertisementData(BLEAdvertisementData& advertisementDat
  * @brief Set the advertisement data that is to be published in a scan response.
  * @param [in] advertisementData The data to be advertised.
  */
-void BLEAdvertising::setScanResponseData(BLEAdvertisementData& advertisementData) {
-#if 0
-	log_v(">> setScanResponseData");
-	esp_err_t errRc = ::esp_ble_gap_config_scan_rsp_data_raw(
-		(uint8_t*)advertisementData.getPayload().data(),
-		advertisementData.getPayload().length());
-	if (errRc != ESP_OK) {
-		log_e("esp_ble_gap_config_scan_rsp_data_raw: %d %s", errRc, GeneralUtils::errorToString(errRc));
-	}
-	m_customScanResponseData = true;   // Set the flag that indicates we are using custom scan response data.
-	log_v("<< setScanResponseData");
-#endif 
+void BLEAdvertising::setScanResponseData(BLEAdvertisementData& advertisementData) { 
     memcpy(_scanRspData, (uint8_t*)advertisementData.getPayload().data(), advertisementData.getPayload().length());
     le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
     m_customScanResponseData = true;
@@ -197,8 +169,6 @@ void BLEAdvertising::start() {
 	addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
 	addCompleteName(BLEDevice::ble_name.c_str());
 	setAdvData();
-	Serial.printf("BLEAdvertising::start()\n\r");
-
 	le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(_advEvtType), &(_advEvtType));
     le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(_advDirectType), &(_advDirectType));
     le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(_advDirectAddr), (_advDirectAddr));
@@ -215,15 +185,12 @@ void BLEAdvertising::start() {
     }
     
     le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(_slaveInitMtuReq), &_slaveInitMtuReq);
-	Serial.printf("BLEAdvertising::end()\n\r");
     if (!ble_start_flags)
 	{
 		ble_start_flags = true;
 		ble_start();
 	}
-    le_adv_start();
-	Serial.printf("BLEAdvertising::end()\n\r");
-    
+    le_adv_start();   
 } // start
 
 /**
@@ -442,7 +409,6 @@ void BLEAdvertisementData::addData(std::string data) {
 	if ((m_payload.length() + data.length()) > 31) {
 		return;
 	}
-    Serial.printf("BLEAdvertisementData  addData\n\r");
 	m_payload.append(data);
 } // addData
 

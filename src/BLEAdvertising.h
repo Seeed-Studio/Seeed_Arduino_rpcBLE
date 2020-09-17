@@ -69,7 +69,7 @@ public:
     void setAdvertisementData(BLEAdvertisementData& advertisementData);
     void setScanResponseData(BLEAdvertisementData& advertisementData);
     void setAdvertisementType(uint8_t adv_type);
-    
+    T_APP_RESULT handleGAPEvent(uint8_t cb_type, void *p_cb_data);
 private:
     bool                 m_customAdvData = false;  // Are we using custom advertising data?
 	bool                 m_customScanResponseData = false;
