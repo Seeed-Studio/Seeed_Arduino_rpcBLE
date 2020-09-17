@@ -188,6 +188,22 @@ void BLEDevice::addPeerDevice(void *peer, bool _client, uint16_t conn_id)
 
     m_connectedClientsMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
 }
+
+void BLEDevice::updatePeerDevice(void* peer, bool _client, uint16_t conn_id) {
+	std::map<uint16_t, conn_status_t>::iterator it = m_connectedClientsMap.find(0xff);
+	if (it != m_connectedClientsMap.end()) {
+		std::swap(m_connectedClientsMap[conn_id], it->second);
+		m_connectedClientsMap.erase(it);
+	}else{
+		it = m_connectedClientsMap.find(conn_id);
+		if (it != m_connectedClientsMap.end()) {
+			conn_status_t _st = it->second;
+			_st.peer_device = peer;
+			std::swap(m_connectedClientsMap[conn_id], _st);
+		}
+	}
+}
+
 void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client)
 {
     if (m_connectedClientsMap.find(conn_id) != m_connectedClientsMap.end())
@@ -366,7 +382,7 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
 
         if(BLEDevice::getClient() != nullptr)
         {
-            // BLEDevice::updatePeerDevice(BLEDevice::getClient(), true, BLEDevice::getClient()->getGattcIf());
+             BLEDevice::updatePeerDevice(BLEDevice::getClient(), true, BLEDevice::getClient()->getGattcIf());
         }
         break;
     }

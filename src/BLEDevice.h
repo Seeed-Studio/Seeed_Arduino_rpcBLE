@@ -29,6 +29,7 @@ public:
 	
 	static void addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
 	static void removePeerDevice(uint16_t conn_id, bool client);
+	static void updatePeerDevice(void* peer, bool _client, uint16_t conn_id);
 
 	static BLEAdvertising* 	getAdvertising();
 	static void		   		startAdvertising();
