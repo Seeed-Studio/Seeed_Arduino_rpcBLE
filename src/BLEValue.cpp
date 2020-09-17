@@ -120,4 +120,3 @@ void BLEValue::setValue(std::string value) {
 void BLEValue::setValue(uint8_t* pData, size_t length) {
 	m_value = std::string((char*) pData, length);
 } // setValue
-
