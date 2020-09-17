@@ -4,12 +4,13 @@
  *  Created on: Apr 16, 2017
  *      Author: kolban
  */
-
+#define TAG "BLEServer"
 #include "BLEDevice.h"
 #include "BLEServer.h"
 //#include "BLEService.h"
 #include <string.h>
 #include <string>
+#include "rpc_unified_log.h"
 #include <unordered_set>
 
 /**
@@ -29,7 +30,6 @@ BLEServer::BLEServer() {
 
 void BLEServer::createApp(uint16_t appId) {
 	m_appId = appId;
-	registerApp(appId);
 } // createApp
 
 
@@ -42,9 +42,6 @@ void BLEServer::createApp(uint16_t appId) {
  * @return A reference to the new service object.
  */
 BLEService* BLEServer::createService(const char* uuid) {
-	BLEUUID bbb = BLEUUID(uuid);
-	Serial.printf("service uuid: \n\r");
-	Serial.println(bbb.toString().c_str());
 	return createService(BLEUUID(uuid));
 }
 
@@ -60,30 +57,12 @@ BLEService* BLEServer::createService(const char* uuid) {
  * @return A reference to the new service object.
  */
 BLEService* BLEServer::createService(BLEUUID uuid, uint32_t numHandles, uint8_t inst_id) {
-//	m_semaphoreCreateEvt.take("createService");
 	BLEService* pService = new BLEService(uuid, numHandles);
 	pService->m_instId = inst_id;
 	m_serviceMap.setByUUID(uuid, pService); // Save a reference to this service being on this server.
 	pService->executeCreate(this);          // Perform the API calls to actually create the service.
-
-//	m_semaphoreCreateEvt.wait("createService");
-
 	return pService;
 } // createService
-
-
-
-
-/**
- * @brief Register the app.
- *
- * @return N/A
- */
-void BLEServer::registerApp(uint16_t m_appId) {
-	m_semaphoreRegisterAppEvt.take("registerApp"); // Take the mutex, will be released by ESP_GATTS_REG_EVT event.
-//	::esp_ble_gatts_app_register(m_appId);
-	m_semaphoreRegisterAppEvt.wait("registerApp");
-} // registerApp
 
 
 /**
@@ -106,16 +85,12 @@ BLEServerCallbacks* BLEServer::getCallbacks() {
 
 
 void BLEServerCallbacks::onConnect(BLEServer* pServer) {
-//	Serial.printf("BLEServerCallbacks", ">> onConnect(): Default");
-//	Serial.printf("BLEServerCallbacks", "Device: %s", BLEDevice::toString().c_str());
-//	Serial.printf("BLEServerCallbacks", "<< onConnect()");
+
 } // onConnect
 
 
 void BLEServerCallbacks::onDisconnect(BLEServer* pServer) {
-//	Serial.printf("BLEServerCallbacks", ">> onDisconnect(): Default");
-//	Serial.printf("BLEServerCallbacks", "Device: %s", BLEDevice::toString().c_str());
-//	Serial.printf("BLEServerCallbacks", "<< onDisconnect()");
+
 } // onDisconnect
 
 
@@ -137,7 +112,6 @@ bool BLEServer::removePeerDevice(uint16_t conn_id, bool _client) {
 uint16_t BLEServer::getPeerMTU(uint16_t conn_id) {
 	return m_connectedServersMap.find(conn_id)->second.mtu;
 }
-
 
 uint16_t  BLEServer::getconnId(){
 	return m_connId;
@@ -178,7 +152,7 @@ std::map<uint16_t, conn_status_t> BLEServer::getPeerDevices(bool _client) {
  *
  */
 void BLEServer::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
-    Serial.printf("into server :: handleGATTServerEvent\n\r");
+    RPC_DEBUG("into server :: handleGATTServerEvent\n\r");
 	// Invoke the handler for every Service we have.
 	m_serviceMap.handleGATTServerEvent(service_id,p_data);
 } // handleGATTServerEvent

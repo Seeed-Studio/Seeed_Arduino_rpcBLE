@@ -83,9 +83,7 @@ private:
 
     BLEFreeRTOS::Semaphore m_semaphoreRegisterAppEvt 	= BLEFreeRTOS::Semaphore("RegisterAppEvt");
     BLEFreeRTOS::Semaphore m_semaphoreCreateEvt 		= BLEFreeRTOS::Semaphore("CreateEvt");
-    void            createApp(uint16_t appId);
-    void            registerApp(uint16_t);
-    
+    void            createApp(uint16_t appId);  
     BLEServiceMap       m_serviceMap;
 	void             handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 
