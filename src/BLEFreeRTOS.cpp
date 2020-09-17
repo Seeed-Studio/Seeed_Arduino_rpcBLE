@@ -50,13 +50,8 @@ uint32_t BLEFreeRTOS::getTimeSinceStart()
  */
 uint32_t BLEFreeRTOS::Semaphore::wait(std::string owner)
 {
-	//log_v(">> wait: Semaphore waiting: %s for %s", toString().c_str(), owner.c_str());
-
 	xSemaphoreTake(m_semaphore, portMAX_DELAY);
-
 	xSemaphoreGive(m_semaphore);
-
-	//log_v("<< wait: Semaphore released: %s", toString().c_str());
 	return m_value;
 } // wait
 
@@ -69,24 +64,16 @@ uint32_t BLEFreeRTOS::Semaphore::wait(std::string owner)
  */
 bool BLEFreeRTOS::Semaphore::timedWait(std::string owner, uint32_t timeoutMs)
 {
-	//log_v(">> wait: Semaphore waiting: %s for %s", toString().c_str(), owner.c_str());
-
 	auto ret = pdTRUE;
-
 	ret = xSemaphoreTake(m_semaphore, timeoutMs);
-
 	xSemaphoreGive(m_semaphore);
-
-	//log_v("<< wait: Semaphore %s released: %d", toString().c_str(), ret);
 	return ret;
 } // wait
 
 BLEFreeRTOS::Semaphore::Semaphore(std::string name)
 {
-
 	m_semaphore = xSemaphoreCreateBinary();
 	xSemaphoreGive(m_semaphore);
-
 	m_name = name;
 	m_owner = std::string("<N/A>");
 	m_value = 0;
@@ -103,11 +90,8 @@ BLEFreeRTOS::Semaphore::~Semaphore()
  */
 void BLEFreeRTOS::Semaphore::give()
 {
-	//log_v("Semaphore giving: %s", toString().c_str());
 	m_owner = std::string("<N/A>");
-
 	xSemaphoreGive(m_semaphore);
-
 } // Semaphore::give
 
 /**
@@ -138,20 +122,9 @@ void BLEFreeRTOS::Semaphore::giveFromISR()
  */
 bool BLEFreeRTOS::Semaphore::take(std::string owner)
 {
-	//log_d("Semaphore taking: %s for %s", toString().c_str(), owner.c_str());
 	bool rc = false;
-
 	rc = ::xSemaphoreTake(m_semaphore, portMAX_DELAY) == pdTRUE;
-
 	m_owner = owner;
-	if (rc)
-	{
-		//log_d("Semaphore taken:  %s", toString().c_str());
-	}
-	else
-	{
-		//log_e("Semaphore NOT taken:  %s", toString().c_str());
-	}
 	return rc;
 } // Semaphore::take
 
@@ -164,20 +137,9 @@ bool BLEFreeRTOS::Semaphore::take(std::string owner)
  */
 bool BLEFreeRTOS::Semaphore::take(uint32_t timeoutMs, std::string owner)
 {
-	//log_v("Semaphore taking: %s for %s", toString().c_str(), owner.c_str());
 	bool rc = false;
-
 	rc = ::xSemaphoreTake(m_semaphore, timeoutMs / portTICK_PERIOD_MS) == pdTRUE;
-
 	m_owner = owner;
-	if (rc)
-	{
-		//log_v("Semaphore taken:  %s", toString().c_str());
-	}
-	else
-	{
-		//log_e("Semaphore NOT taken:  %s", toString().c_str());
-	}
 	return rc;
 } // Semaphore::take
 
