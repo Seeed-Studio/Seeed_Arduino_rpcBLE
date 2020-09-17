@@ -15,10 +15,8 @@
 #include "BLEAddress.h"
 #include "BLEAdvertisedDevice.h"
 #include "BLERemoteService.h"
-
 #include "BLERemoteDescriptor.h"
 #include "Seeed_erpcUnified.h"
-
 
 typedef uint8_t T_CLIENT_ID;
 typedef uint8_t T_SERVER_ID; 
@@ -39,19 +37,22 @@ public:
 	
 	bool 			 connect(BLEAdvertisedDevice* device);
 	bool             connect(BLEAddress address, T_GAP_REMOTE_ADDR_TYPE type = GAP_REMOTE_ADDR_LE_PUBLIC);   // Connect to the remote BLE Server
-	void                                       disconnect();
+	void             disconnect();
 	void             setClientCallbacks(BLEClientCallbacks *pClientCallbacks);
 	BLEAddress       m_peerAddress = BLEAddress((uint8_t*)"\0\0\0\0\0\0");   // The BD address of the remote server.
-	
+
+	void                                       setValue(BLEUUID serviceUUID, BLEUUID characteristicUUID, std::string value);   // Set the value of a given characteristic at a given service.
 	bool                                       isConnected();      
-	
 	uint8_t                                    getGattcIf();
 	uint16_t                                   getConnId();
-	std::map<std::string, BLERemoteService*>*  getServices(); 
-	BLERemoteService*                          getService(BLEUUID uuid);  
-	
-//	static BLEClient*     _this;
-	
+	std::map<std::string, BLERemoteService*>*  getServices();
+	BLERemoteService*                          getService(const char* uuid);  // Get a reference to a specified service offered by the remote BLE server.
+	BLERemoteService*                          getService(BLEUUID uuid);
+	BLEAddress                                 getPeerAddress();              // Get the address of the remote BLE Server
+	int                                        getRssi();                     // Get the RSSI of the remote BLE Server
+    std::string                                getValue(BLEUUID serviceUUID, BLEUUID characteristicUUID);   // Get the value of a given characteristic at a given service.
+	T_APP_RESULT                               handleGAPEvent(uint8_t cb_type, void *p_cb_data);
+    std::string                                toString();                    // Return a string representation of this client.
 	uint16_t         m_appId;
 private:
     friend class BLEDevice;
@@ -60,12 +61,7 @@ private:
 	friend class BLERemoteDescriptor;
 	
 	
-	T_APP_RESULT   clientCallbackDefault(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data);
-	
-	
-    
-//	static T_CLIENT_ID    _basClientId;
-	
+	T_APP_RESULT   clientCallbackDefault(T_CLIENT_ID client_id, uint8_t conn_id, void *p_data);	
 	BLEClientCallbacks*   m_pClientCallbacks;
 	uint16_t              m_conn_id;
 	static uint8_t        m_gattc_if;
@@ -73,13 +69,10 @@ private:
     bool                  m_isConnected = false;	
 	
 	BLEFreeRTOS::Semaphore m_semaphoreSearchCmplEvt = BLEFreeRTOS::Semaphore("SearchCmplEvt");
+	BLEFreeRTOS::Semaphore m_semaphoreRssiCmplEvt   = BLEFreeRTOS::Semaphore("RssiCmplEvt");
+
 	void clearServices();   // Clear any existing services.
 	std::map<std::string, BLERemoteService*> m_servicesMap;
-	
-	//std::map<std::string, BLERemoteCharacteristic*> m_characteristicMap;
-	//std::map<uint16_t, BLERemoteCharacteristic*> m_characteristicMapByHandle;
-	
-
 }; // class BLEDevice
 
 
