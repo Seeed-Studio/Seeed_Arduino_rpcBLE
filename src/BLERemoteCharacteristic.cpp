@@ -4,9 +4,10 @@
  *  Created on: Jul 8, 2017
  *      Author: kolban
  */
-
+#define TAG "RemoteCharacteristic"
 #include "BLERemoteCharacteristic.h"
 #include <sstream>
+#include "rpc_unified_log.h"
 
 BLERemoteCharacteristic::BLERemoteCharacteristic(
     uint16_t    decl_handle,  
@@ -59,7 +60,6 @@ BLERemoteService* BLERemoteCharacteristic::getRemoteService() {
  * @return True if the characteristic supports reading.
  */
 bool BLERemoteCharacteristic::canRead() {
-	Serial.println(m_charProp);
 	return (m_charProp & GATT_CHAR_PROP_READ) != 0;	
 } // canRead
 
@@ -91,23 +91,12 @@ std::string BLERemoteCharacteristic::readValue() {
 	if (!getRemoteService()->getClient()->isConnected()) {
 		return std::string();
 	}
-	
 	m_semaphoreReadCharEvt.take("readValue");
-
-/* 	
-	esp_err_t errRc = ::esp_ble_gattc_read_char(
-		m_pRemoteService->getClient()->getGattcIf(),
-		m_pRemoteService->getClient()->getConnId(),    // The connection ID to the BLE server
-		getHandle(),                                   // The handle of this characteristic
-		m_auth);		// Security
-		
- */
     client_attr_read(m_pRemoteService->getClient()->getConnId(), m_pRemoteService->getClient()->getGattcIf(),getHandle());
 	
 	// Block waiting for the event that indicates that the read has completed.  When it has, the std::string found
 	// in m_value will contain our data.
 	m_semaphoreReadCharEvt.wait("readValue");
-
 	return m_value;
 } // readValue
 
@@ -122,25 +111,19 @@ std::string BLERemoteCharacteristic::readValue() {
 void BLERemoteCharacteristic::registerForNotify(notify_callback notifyCallback, bool notifications) {
 	
 	m_notifyCallback = notifyCallback;   // Save the notification callback.
-
 	m_semaphoreRegForNotifyEvt.take("registerForNotify");
-
 	if (notifyCallback != nullptr) {   // If we have a callback function, then this is a registration.
 		
 		uint8_t val[] = {0x01, 0x00};
 		if(!notifications) val[0] = 0x02;
-		BLERemoteDescriptor* desc = getDescriptor(BLEUUID((uint16_t)0x2902));
-		
-		Serial.println("client_attr_writeValue start\n\r");
+		BLERemoteDescriptor* desc = getDescriptor(BLEUUID((uint16_t)0x2902));	
 		desc->writeValue(val, 2);
-		Serial.println("client_attr_writeValue end\n\r");
 	} // End Register
 	else {   // If we weren't passed a callback function, then this is an unregistration.		
 		uint8_t val[] = {0x00, 0x00};
 		BLERemoteDescriptor* desc = getDescriptor((uint16_t)0x2902);
 		desc->writeValue(val, 2);
 	} // End Unregister
-
 	m_semaphoreRegForNotifyEvt.wait("registerForNotify");
 } // registerForNotify
 
@@ -154,12 +137,10 @@ BLERemoteDescriptor* BLERemoteCharacteristic::getDescriptor(BLEUUID uuid) {
 	std::string v = uuid.toString();
 	retrieveDescriptors();
 	for (auto &myPair : m_descriptorMap) {
-		Serial.println("BLERemoteDescriptor not  found getDescriptor end\n\r");
 		if (myPair.first == v) {			
 			return myPair.second;
 		}
 	}
-	Serial.println("BLERemoteDescriptor* BLERemoteCharacteristic::getDescriptor end\n\r");
 	return nullptr;
 } // getDescriptor
 
@@ -180,16 +161,13 @@ void BLERemoteCharacteristic::writeValue(std::string newValue, bool response) {
 
 
 void BLERemoteCharacteristic::writeValue(uint8_t* data, size_t length, bool response) {
-
 	// Check to see that we are connected.
 	if (!getRemoteService()->getClient()->isConnected()) {
 		return;
 	}
-    Serial.println("BLERemoteCharacteristic::writeValue entry\n\r");
 	m_semaphoreWriteCharEvt.take("writeValue");
 	// Invoke the ESP-IDF API to perform the write.
 	client_attr_write(m_pRemoteService->getClient()->getConnId(),m_pRemoteService->getClient()->getGattcIf(),GATT_WRITE_TYPE_REQ,getHandle(),length,(uint8_t *)data);
-    Serial.println("BLERemoteCharacteristic::writeValue end\n\r");
 	m_semaphoreWriteCharEvt.wait("writeValue");
 } // writeValue
 
@@ -221,7 +199,6 @@ void BLERemoteCharacteristic::retrieveDescriptors() {
 	client_all_char_descriptor_discovery(getRemoteService()->getClient()->getConnId(),getRemoteService()->getClient()->getGattcIf(),
                                                 m_handle,m_end_handle);
 
-	
     m_semaphoregetdescEvt.take("getDescriptor");
 	m_haveDescriptor = (m_semaphoregetdescEvt.wait("getDescriptor") == 0);
 } // getDescriptors
@@ -251,14 +228,13 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
     {
     case BLE_CLIENT_CB_TYPE_DISCOVERY_STATE:
 	{
-        Serial.printf("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
+        RPC_DEBUG("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
 		T_DISCOVERY_STATE state = p_ble_client_cb_data->cb_content.discov_state.state;
 		switch(state)
 		{				
             case DISC_STATE_CHAR_DESCRIPTOR_DONE:
 			{
 			BLERemoteCharacteristic::m_semaphoregetdescEvt.give(0);
-			Serial.printf("m_semaphoregetchaEvt");
 			break;
 			}
 			default:
@@ -271,7 +247,7 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
 		T_DISCOVERY_RESULT_TYPE discov_type = p_ble_client_cb_data->cb_content.discov_result.discov_type;
 		switch (discov_type)
         {
-            Serial.printf("discov_type:%d\n\r", discov_type);
+            RPC_DEBUG("discov_type:%d\n\r", discov_type);
         case DISC_RESULT_CHAR_DESC_UUID16:
         {
             T_GATT_CHARACT_DESC_ELEM16 *disc_data = (T_GATT_CHARACT_DESC_ELEM16 *)&(p_ble_client_cb_data->cb_content.discov_result.result.char_desc_uuid16_disc_data);			
@@ -280,7 +256,7 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
 			BLEUUID(disc_data->uuid16),
 			this
 		    );  
-			Serial.println(pNewRemoteDescriptor->getUUID().toString().c_str());
+			RPC_DEBUG(pNewRemoteDescriptor->getUUID().toString().c_str());
 		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
 			break;
         }
@@ -292,7 +268,7 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
 			BLEUUID(disc_data->uuid128,16),
 			this
 		    );  
-			Serial.println(pNewRemoteDescriptor->getUUID().toString().c_str());
+			RPC_DEBUG(pNewRemoteDescriptor->getUUID().toString().c_str());
 		    m_descriptorMap.insert(std::pair<std::string, BLERemoteDescriptor*>(pNewRemoteDescriptor->getUUID().toString(), pNewRemoteDescriptor));
 			break;
         }
@@ -319,12 +295,8 @@ T_APP_RESULT BLERemoteCharacteristic::clientCallbackDefault(T_CLIENT_ID client_i
     case BLE_CLIENT_CB_TYPE_NOTIF_IND:{
 		if (p_ble_client_cb_data->cb_content.notif_ind.handle != getHandle()) break;
 		if (m_notifyCallback != nullptr) {
-			
-			Serial.println("m_notifyCallback entry\n\r");	
-			
 			m_notifyCallback(this,p_ble_client_cb_data->cb_content.notif_ind.p_value, p_ble_client_cb_data->cb_content.notif_ind.value_size,p_ble_client_cb_data->cb_content.notif_ind.notify);
 		} // End we have a callback function ...
-		Serial.println("m_notifyCallback end\n\r");
 		m_semaphoreRegForNotifyEvt.give();
 		break;
 	}
