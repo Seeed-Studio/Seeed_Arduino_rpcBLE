@@ -86,6 +86,3 @@ std::string BLEAddress::toString() {
 	return ret;
 } // toString
 
-uint8_t* BLEAddress::data() {
-    return _btAddr;
-}
