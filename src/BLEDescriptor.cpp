@@ -4,13 +4,14 @@
  *  Created on: Jun 22, 2017
  *      Author: kolban
  */
-
+#define TAG "BLEDescriptor"
 #include <sstream>
 #include <string.h>
 #include <iomanip>
 #include <stdlib.h>
 #include "BLEService.h"
 #include "BLEDescriptor.h"
+#include "rpc_unified_log.h"
 
 #define NULL_HANDLE (0xffff)
 
@@ -106,59 +107,7 @@ uint32_t BLEDescriptor::getpermissions() {
  * @param [in] pCharacteristic The characteristic to which to register this descriptor.
  */
 void BLEDescriptor::executeCreate(BLECharacteristic* pCharacteristic) {
-
-//	if (m_handle != NULL_HANDLE) {
-//		return;
-//	}
-
 	m_pCharacteristic = pCharacteristic; // Save the characteristic associated with this service.
-
-
-//	esp_attr_control_t control;
-//	control.auto_rsp = ESP_GATT_AUTO_RSP;
-//	m_semaphoreCreateEvt.take("executeCreate");
-#if 0
-	esp_err_t errRc = ::esp_ble_gatts_add_char_descr(
-			pCharacteristic->getService()->getHandle(),
-			getUUID().getNative(),
-			(esp_gatt_perm_t)m_permissions,
-			&m_value,
-			&control);
-	if (errRc != ESP_OK) {
-		log_e("<< esp_ble_gatts_add_char_descr: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-		return;
-	}
-#endif
-//	m_semaphoreCreateEvt.wait("executeCreate");
-    // Serial.printf("BLEDescriptor   executeCreate start\n\r");
-    // ble_desc_t desc;
-	// desc.flags = getflags();
-	// desc.uuid_length = getUUID().getNative()->len;
-	// Serial.printf("%s \n\r", getUUID().toString().c_str());
-	Serial.printf("desc.uuid:");
-	for(int i = 0; i <  getUUID().getNative()->len; i++)
-	{
-		Serial.printf("%02x ",getUUID().getNative()->uuid.uuid128[i]);
-	}
-	Serial.printf("\n\r");
-
-	// memcpy(&(desc.uuid), &(getUUID().getNative()->uuid), desc.uuid_length);
-	// Serial.printf("desc.uuid:");
-	// for(int i = 0; i < desc.uuid_length; i++)
-	// {
-	// 	Serial.printf("%02x ", desc.uuid[i]);
-	// }
-	// Serial.printf("\n\r");
-	// Serial.printf("BLEDescriptor   executeCreate start\n\r");
-	// desc.p_value = getattrvalue();
-    // desc.vlaue_length = getmaxlen();
-	// desc.permissions = getpermissions();
-    // Serial.printf("BLEDescriptor   executeCreate end\n\r");
-	// uint8_t desc_handle1 = ble_create_desc(m_pCharacteristic->getService()->getgiff(), m_pCharacteristic->getHandle(), desc);
-	// Serial.printf("BLEDescriptor   executeCreate end\n\r");
-	// m_handle = desc_handle1;
-	// Serial.printf("desc_handle1: %d\n\r", desc_handle1);
-
 	ble_desc_t desc;
 	desc.flags =  getflags();
 	desc.uuid_length = getUUID().getNative()->len;
@@ -168,8 +117,7 @@ void BLEDescriptor::executeCreate(BLECharacteristic* pCharacteristic) {
 	desc.permissions =   getpermissions();
 	uint8_t desc_handle = ble_create_desc(m_pCharacteristic->getService()->getgiff(), m_pCharacteristic->getHandle(), desc);
  	m_handle = desc_handle;
-	Serial.printf("desc_handle: %d\n\r", desc_handle);
-
+	RPC_DEBUG("desc_handle: %d\n\r", desc_handle);
 } // executeCreate
 
 
@@ -215,9 +163,6 @@ void BLEDescriptor::handleGATTServerEvent(
     }
     case SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE:
     {
-      //  setValue(cb_data->cb_data_context.read_data.p_value, cb_data->cb_data_context.read_data.length);
-		//m_pCallback->onWrite(this);
-
         break;
     }
     default:
