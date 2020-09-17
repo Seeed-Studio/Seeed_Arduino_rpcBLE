@@ -5,20 +5,19 @@
  *      Author: coolc
  */
 
-
+#define TAG "Scan"
 #include <map>
 #include <Arduino.h>
 #include "BLEScan.h"
 #include <functional>
+#include "rpc_unified_log.h"
 
 bool ble_scan_flags  = false;
-uint8_t BLEScan::_scanProcessing = 0;
 /**
  * Constructor
  */
 
 BLEScan::BLEScan() {
-	_scanProcessing = 0;
 } // BLEScan
 
 
@@ -31,13 +30,12 @@ BLEScan::BLEScan() {
  */
 void BLEScan::setActiveScan(bool active) {
 	
-	if (active) {
-		
+	if (active) {	
 		m_scanMode = GAP_SCAN_MODE_ACTIVE;
-		Serial.printf("setActiveScan ACTIVE...................");
+		RPC_DEBUG("setActiveScan ACTIVE...................");
 	} else {
 		m_scanMode = GAP_SCAN_MODE_PASSIVE;
-		Serial.printf("setActiveScan PASSIVE...................");
+		RPC_DEBUG("setActiveScan PASSIVE...................");
 	}
     
 } // setActiveScan
@@ -90,7 +88,6 @@ BLEScanResults BLEScan::start(uint32_t duration, bool is_continue) {
 		ble_scan_flags = true;
 		ble_start();
 	}
-	updateScanParams();	
 	if(start(duration, nullptr, is_continue)) {
 		m_semaphoreScanEnd.wait("start");   // Wait for the semaphore to release.
 	}
@@ -118,25 +115,10 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
 		}
 		m_scanResults.m_vectorAdvertisedDevices.clear();
 	}
-    
+    updateScanParams();	
 	uint32_t m_duration = duration * 1000;
 	le_scan_timer_start(m_duration);
-#if 0
-    T_GAP_CAUSE cause;
-	if (_scanProcessing) {
-        Serial.printf("Scan is processing, please stop it first\n\r");
-    } else {
-        _scanProcessing = 1;
-        cause = le_scan_start();
-        if (cause != GAP_CAUSE_SUCCESS) {
-            Serial.printf("Scan error\n\r");
-            _scanProcessing = 0;
-        }
-    }
-#endif 
-    //le_scan_start();
-	//delay(1000);
-	Serial.printf("Scan is processing, please end\n\r");
+	RPC_DEBUG("Scan is processing, please end\n\r");
     return true;
 } // start
 
@@ -148,9 +130,15 @@ bool BLEScan::start(uint32_t duration, void (*scanCompleteCB)(BLEScanResults), b
 void BLEScan::stop() {
     le_scan_stop();
     m_semaphoreScanEnd.give();
-	Serial.printf("Level  BLEScan stop\n\r");
+	RPC_DEBUG("Level  BLEScan stop\n\r");
 } // stop
 
+// delete peer device from cache after disconnecting, it is required in case we are connecting to devices with not public address
+void BLEScan::erase(BLEAddress address) {
+	BLEAdvertisedDevice *advertisedDevice = m_scanResults.m_vectorAdvertisedDevices.find(address.toString())->second;
+	m_scanResults.m_vectorAdvertisedDevices.erase(address.toString());
+	delete advertisedDevice;
+}
 
 
 /**
@@ -171,6 +159,23 @@ void BLEScan::setAdvertisedDeviceCallbacks(BLEAdvertisedDeviceCallbacks* pAdvert
 int BLEScanResults::getCount() {
 	return m_vectorAdvertisedDevices.size();
 } // getCount
+
+/**
+ * @brief Return the specified device at the given index.
+ * The index should be between 0 and getCount()-1.
+ * @param [in] i The index of the device.
+ * @return The device at the specified index.
+ */
+BLEAdvertisedDevice BLEScanResults::getDevice(uint32_t i) {
+	uint32_t x = 0;
+	BLEAdvertisedDevice dev = *m_vectorAdvertisedDevices.begin()->second;
+	for (auto it = m_vectorAdvertisedDevices.begin(); it != m_vectorAdvertisedDevices.end(); it++) {
+		dev = *it->second;
+		if (x==i)	break;
+		x++;
+	}
+	return dev;
+}
 
 BLEScanResults BLEScan::getResults() {
 	return m_scanResults;
