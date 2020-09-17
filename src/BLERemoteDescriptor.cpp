@@ -62,10 +62,7 @@ void BLERemoteDescriptor::writeValue(uint8_t* data, size_t length, bool response
 	if (!getRemoteCharacteristic()->getRemoteService()->getClient()->isConnected()) {
 		return;
 	}
-
-	
 	client_attr_write(m_pRemoteCharacteristic->getRemoteService()->getClient()->getConnId(),m_pRemoteCharacteristic->getRemoteService()->getClient()->getGattcIf(),GATT_WRITE_TYPE_REQ,getHandle(),length,(uint8_t *)data);
-
 } // writeValue
 
 
