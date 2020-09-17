@@ -62,44 +62,6 @@ std::string BLEUUID::toString() {
 BLEUUID::BLEUUID() {
 }
 
-#if 0
-BLEUUID::BLEUUID(const char * str) {
-    char temp[] = {0, 0, 0};
-
-    memset(_data, 0x00, sizeof(_data));
-
-    _length = 0;
-    uint8_t i;
-    for (i = 0; (i <= (strlen(str) - 1)) && (_length < BLE_UUID_MAX_LENGTH); i += 2) {
-        if (str[i] == '-') {
-            i++;
-            //continue;
-        }
-
-        temp[0] = str[i];
-        temp[1] = str[i+1];
-
-        _data[_length] = strtoul(temp, NULL, 16);
-
-        _length++;
-    }
-
-    if (_length <= 2) {
-        _length = 2;
-    } else if (_length <= 4) {
-        _length = 4;
-    } else {
-        _length = 16;
-    }
-    
-    for (i = 0; i < _length; i++) {
-        _dataNative[i] = _data[(_length - 1 - i)];
-    }
-}
-
-#endif 
-
-
 BLEUUID::BLEUUID(uint8_t* data, uint8_t length) {
     if ((length == 2) || (length == 4) || (length == 16)) {
         _length = length;
@@ -205,7 +167,6 @@ BLEUUID::BLEUUID(uint16_t uuid) {
  * @return True if the UUIDs are equal and false otherwise.
  */
 bool BLEUUID::equals(BLEUUID uuid) {
-	//log_d("Comparing: %s to %s", toString().c_str(), uuid.toString().c_str());
 	if (!m_valueSet || !uuid.m_valueSet) return false;
 
 	if (uuid.m_uuid.len != m_uuid.len) {
@@ -244,9 +205,6 @@ uint8_t BLEUUID::length() {
 const uint8_t* BLEUUID::dataNative() {
     return _dataNative;
 }
-
-
-
 
 static void memrcpy(uint8_t* target, uint8_t* source, uint32_t size) {
 	assert(size > 0);
