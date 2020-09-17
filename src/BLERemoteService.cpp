@@ -6,9 +6,10 @@
  */
 
 
-
+#define TAG "RemoteService"
 #include <sstream>
 #include "BLERemoteService.h"
+#include "rpc_unified_log.h"
 #pragma GCC diagnostic warning "-Wunused-but-set-parameter"
 
 BLERemoteService::BLERemoteService(
@@ -50,8 +51,6 @@ uint16_t BLERemoteService::getStartHandle() {
 } // getStartHandle
 
 uint16_t BLERemoteService::getHandle() {
-//	Serial.println(">> getHandle: service: %s", getUUID().toString().c_str());
-//	Serial.println("<< getHandle: %d 0x%.2x", getStartHandle(), getStartHandle());
 	return getStartHandle();
 } // getHandle
 
@@ -59,6 +58,34 @@ uint16_t BLERemoteService::getHandle() {
 BLEUUID BLERemoteService::getUUID() {
 	return m_uuid;
 }
+
+/**
+ * @brief Read the value of a characteristic associated with this service.
+ */
+std::string BLERemoteService::getValue(BLEUUID characteristicUuid) {
+	std::string ret =  getCharacteristic(characteristicUuid)->readValue();
+	return ret;
+} // readValue
+
+/**
+ * @brief Set the value of a characteristic.
+ * @param [in] characteristicUuid The characteristic to set.
+ * @param [in] value The value to set.
+ * @throws BLEUuidNotFound
+ */
+void BLERemoteService::setValue(BLEUUID characteristicUuid, std::string value) {
+	getCharacteristic(characteristicUuid)->writeValue(value);
+} // setValue
+
+/**
+ * @brief Get the remote characteristic object for the characteristic UUID.
+ * @param [in] uuid Remote characteristic uuid.
+ * @return Reference to the remote characteristic object.
+ * @throws BLEUuidNotFoundException
+ */
+BLERemoteCharacteristic* BLERemoteService::getCharacteristic(const char* uuid) {
+    return getCharacteristic(BLEUUID(uuid));
+} // getCharacteristic
 
 /**
  * @brief Get the characteristic object for the UUID.
@@ -81,6 +108,42 @@ BLERemoteCharacteristic* BLERemoteService::getCharacteristic(BLEUUID uuid) {
 } // getCharacteristic
 
 /**
+ * @brief Retrieve a map of all the characteristics of this service.
+ * @return A map of all the characteristics of this service.
+ */
+std::map<std::string, BLERemoteCharacteristic*>* BLERemoteService::getCharacteristics() {
+	// If is possible that we have not read the characteristics associated with the service so do that
+	// now.  The request to retrieve the characteristics by calling "retrieveCharacteristics" is a blocking
+	// call and does not return until all the characteristics are available.
+	if (!m_haveCharacteristics) {
+		retrieveCharacteristics();
+	}
+	return &m_characteristicMap;
+} // getCharacteristics
+
+/**
+ * @brief Retrieve a map of all the characteristics of this service.
+ * @return A map of all the characteristics of this service.
+ */
+std::map<uint16_t, BLERemoteCharacteristic*>* BLERemoteService::getCharacteristicsByHandle() {
+	// If is possible that we have not read the characteristics associated with the service so do that
+	// now.  The request to retrieve the characteristics by calling "retrieveCharacteristics" is a blocking
+	// call and does not return until all the characteristics are available.
+	if (!m_haveCharacteristics) {
+		retrieveCharacteristics();
+	}
+	return &m_characteristicMapByHandle;
+} // getCharacteristicsByHandle
+
+/**
+ * @brief This function is designed to get characteristics map when we have multiple characteristics with the same UUID
+ */
+void BLERemoteService::getCharacteristics(std::map<uint16_t, BLERemoteCharacteristic*>* pCharacteristicMap) {
+	pCharacteristicMap = &m_characteristicMapByHandle;
+}  // Get the characteristics map.
+
+
+/**
  * @brief Retrieve all the characteristics for this service.
  * This function will not return until we have all the characteristics.
  * @return N/A
@@ -88,7 +151,6 @@ BLERemoteCharacteristic* BLERemoteService::getCharacteristic(BLEUUID uuid) {
 void BLERemoteService::retrieveCharacteristics() {
 	removeCharacteristics(); // Forget any previous characteristics.
 	client_all_char_discovery(m_pClient->getConnId(), m_pClient->getGattcIf(),m_startHandle,m_endHandle);
-    
     m_semaphoregetchaEvt.take("getCharacteristic");	
 	m_haveCharacteristics = (m_semaphoregetchaEvt.wait("getCharacteristic") == 0);	
 
@@ -113,6 +175,32 @@ void BLERemoteService::removeCharacteristics() {
 	m_characteristicMapByHandle.clear();   // Clear the map
 } // removeCharacteristics
 
+/**
+ * @brief Create a string representation of this remote service.
+ * @return A string representation of this remote service.
+ */
+std::string BLERemoteService::toString() {
+	std::string res = "Service: uuid: " + m_uuid.toString();
+	char val[6];
+	res += ", start_handle: ";
+	snprintf(val, sizeof(val), "%d", m_startHandle);
+	res += val;
+	snprintf(val, sizeof(val), "%04x", m_startHandle);
+	res += " 0x";
+	res += val;
+	res += ", end_handle: ";
+	snprintf(val, sizeof(val), "%d", m_endHandle);
+	res += val;
+	snprintf(val, sizeof(val), "%04x", m_endHandle);
+	res += " 0x";
+	res += val;
+	for (auto &myPair : m_characteristicMap) {
+		res += "\n" + myPair.second->toString();
+	   // myPair.second is the value
+	}
+	return res;
+} // toString
+
 T_APP_RESULT BLERemoteService::clientCallbackDefault(
 	T_CLIENT_ID client_id, uint8_t conn_id, void *p_data) {
 	T_APP_RESULT result = APP_RESULT_SUCCESS;
@@ -122,7 +210,7 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
     {
     case BLE_CLIENT_CB_TYPE_DISCOVERY_STATE:
 	{
-        Serial.printf("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
+        RPC_DEBUG("discov_state:%d\n\r", p_ble_client_cb_data->cb_content.discov_state.state);
 		//give se
 		T_DISCOVERY_STATE state = p_ble_client_cb_data->cb_content.discov_state.state;
 		switch(state)
@@ -130,7 +218,6 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
 			case DISC_STATE_CHAR_DONE:
 			{
 			BLERemoteService::m_semaphoregetchaEvt.give(0);
-			Serial.printf("m_semaphoregetchaEvt");
 			break;
 			}						
 		}
@@ -142,12 +229,12 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
 		T_DISCOVERY_RESULT_TYPE discov_type = p_ble_client_cb_data->cb_content.discov_result.discov_type;
         switch (discov_type)
         {
-            Serial.printf("discov_type:%d\n\r", discov_type);
+            RPC_DEBUG("discov_type:%d\n\r", discov_type);
       
         case DISC_RESULT_SRV_DATA:
         {
             T_GATT_SERVICE_BY_UUID_ELEM *disc_data = (T_GATT_SERVICE_BY_UUID_ELEM *)&(p_ble_client_cb_data->cb_content.discov_result.result.srv_disc_data);
-            Serial.printf("start_handle:%d, end handle:%d\n\r", disc_data->att_handle, disc_data->end_group_handle);
+            RPC_DEBUG("start_handle:%d, end handle:%d\n\r", disc_data->att_handle, disc_data->end_group_handle);
             break;
         }
         case DISC_RESULT_CHAR_UUID16:
@@ -161,11 +248,9 @@ T_APP_RESULT BLERemoteService::clientCallbackDefault(
 			disc_data->value_handle,
 			uuid,
 			this
-		    ); 
-			
+		    ); 			
             m_characteristicMap.insert(std::pair<std::string, BLERemoteCharacteristic*>(pNewRemoteCharacteristic->getUUID().toString(), pNewRemoteCharacteristic));
-		    m_characteristicMapByHandle.insert(std::pair<uint16_t, BLERemoteCharacteristic*>(disc_data->decl_handle, pNewRemoteCharacteristic));					
-           
+		    m_characteristicMapByHandle.insert(std::pair<uint16_t, BLERemoteCharacteristic*>(disc_data->decl_handle, pNewRemoteCharacteristic));					           
             break;
         }
         case DISC_RESULT_CHAR_UUID128:

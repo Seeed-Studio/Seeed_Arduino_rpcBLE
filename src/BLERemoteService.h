@@ -19,13 +19,18 @@ class BLERemoteCharacteristic;
 class BLERemoteService {
 public:	
 	virtual ~BLERemoteService();
+	BLERemoteCharacteristic* getCharacteristic(const char* uuid);	  // Get the specified characteristic A model of a remote %BLE service..
 	BLERemoteCharacteristic* getCharacteristic(BLEUUID uuid);
+	std::map<std::string, BLERemoteCharacteristic*>* getCharacteristics();
+	std::map<uint16_t, BLERemoteCharacteristic*>* getCharacteristicsByHandle();  // Get the characteristics map.
+	void getCharacteristics(std::map<uint16_t, BLERemoteCharacteristic*>* pCharacteristicMap);
 	BLEClient*               getClient(void);
-	
+	std::string              getValue(BLEUUID characteristicUuid);                      // Get the value of a characteristic.
+	void                     setValue(BLEUUID characteristicUuid, std::string value);   // Set the value of a characteristic.
 	uint16_t                 getHandle();
 	uint16_t                 getEndHandle();
 	BLEUUID                  getUUID(void);
-	
+	std::string              toString(void);
 	
 	
 private:
