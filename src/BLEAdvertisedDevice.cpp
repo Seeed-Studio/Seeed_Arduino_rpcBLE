@@ -8,13 +8,13 @@
  * See also:
  * https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
  *
- *  Created on: Jul 3, 2017
- *      Author: kolban
+ *  Created on: Jul 3, 2020
+ *      Author: coolc
  */
-
-
+#define TAG "AdvertisedDevice"
 #include <sstream>
 #include "BLEAdvertisedDevice.h"
+#include "rpc_unified_log.h"
 
 
 BLEAdvertisedDevice::BLEAdvertisedDevice() {
@@ -22,12 +22,10 @@ BLEAdvertisedDevice::BLEAdvertisedDevice() {
 	m_adFlag           = 0;
 	m_appearance       = 0;
 	m_deviceType       = 0;
-//	m_manufacturerData = "";
 	m_name             = "";
 	m_rssi             = -9999;
 	m_txPower          = 0;
 	m_pScan            = nullptr;
-
 	m_haveAppearance       = false;
 	m_haveManufacturerData = false;
 	m_haveName             = false;
@@ -48,21 +46,11 @@ T_GAP_REMOTE_ADDR_TYPE BLEAdvertisedDevice::getAddressType() {
  * @return Return true if service is advertised
  */
 bool BLEAdvertisedDevice::isAdvertisingService(BLEUUID uuid){
-	Serial.printf("isAdvertisingService: size %d\n\r", m_serviceUUIDs.size());
 	for (int i = 0; i < m_serviceUUIDs.size(); i++) {
 		if (m_serviceUUIDs[i].equals(uuid)) return true;
 	}
-	return false;
-
-#if 0	
-	for (int i = 0; i < 7; i++) {
-		if (_serviceList[i].equals(uuid)) return true;
-	}
-	return false;
-#endif
-    
+	return false;   
 }
-
 
 /**
  * @brief Get the Service UUID.
@@ -97,7 +85,6 @@ void BLEAdvertisedDevice::setServiceUUID(BLEUUID serviceUUID) {
  * @return True if there is a service UUID value present.
  */
 bool BLEAdvertisedDevice::haveServiceUUID() {
-	Serial.printf("haveServiceUUID :%d\n\r", m_haveServiceUUID);
 	return m_haveServiceUUID;
 } // haveServiceUUID
 
@@ -112,6 +99,14 @@ bool BLEAdvertisedDevice::haveServiceUUID() {
 uint16_t BLEAdvertisedDevice::getAppearance() {
 	return m_appearance;
 } // getAppearance
+
+/**
+ * @brief Get the manufacturer data.
+ * @return The manufacturer data of the advertised device.
+ */
+uint8_t* BLEAdvertisedDevice::getManufacturerData() {
+	return m_manufacturerData;
+} // getManufacturerData
 
 
 /**
@@ -141,6 +136,22 @@ BLEAddress BLEAdvertisedDevice::getAddress() {
 std::string BLEAdvertisedDevice::getName() {
 	return m_name;
 } // getName
+
+/**
+ * @brief Get the RSSI.
+ * @return The RSSI of the advertised device.
+ */
+int BLEAdvertisedDevice::getRSSI() {
+	return m_rssi;
+} // getRSSI
+
+/**
+ * @brief Get the scan object that created this advertisement.
+ * @return The scan object.
+ */
+BLEScan* BLEAdvertisedDevice::getScan() {
+	return m_pScan;
+} // getScan
 
 
 /**
@@ -179,6 +190,21 @@ bool BLEAdvertisedDevice::haveTXPower() {
 } // haveTXPower
 
 
+/**
+ * @brief Does this advertisement have manufacturer data?
+ * @return True if there is manufacturer data present.
+ */
+bool BLEAdvertisedDevice::haveManufacturerData() {
+	return m_haveManufacturerData;
+} // haveManufacturerData
+
+/**
+ * @brief Does this advertisement have a signal strength value?
+ * @return True if there is a signal strength value present.
+ */
+bool BLEAdvertisedDevice::haveRSSI() {
+	return m_haveRSSI;
+} // haveRSSI
 
 /**
  * @brief Get the TX Power.
@@ -221,10 +247,9 @@ void BLEAdvertisedDevice::setAddressType(T_GAP_REMOTE_ADDR_TYPE type) {
 }
 
 void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
-	Serial.printf("Entry parseAdvertisement\n\r");
+	RPC_DEBUG("Entry parseAdvertisement\n\r");
     T_LE_SCAN_INFO *scan_info = p_data->p_le_scan_info;
     clear();
-
     _advType = (scan_info->adv_type);
     _addrType = (scan_info->remote_addr_type);
 	//set m_address
@@ -237,12 +262,12 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
 
     uint8_t buffer[32];
     uint8_t pos = 0;
-	Serial.printf("scan_info data:\n\r");
+	RPC_DEBUG("scan_info data:\n\r");
 	for(int i = 0; i < scan_info->data_len; i++)
 	{
-		Serial.printf("%02x, ", scan_info->data[i]);
+		RPC_DEBUG("%02x, ", scan_info->data[i]);
 	}
-	Serial.printf("\n\r");
+	RPC_DEBUG("\n\r");
     while (pos < scan_info->data_len) {
         // Length of the AD structure.
         uint8_t length = scan_info->data[pos++];    // length of following data field = length of advert data field + 1 (adtype)
@@ -253,9 +278,6 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
             memcpy(buffer, scan_info->data + pos + 1, length - 1);
             // AD Type, one octet.
             type = scan_info->data[pos];
-
-//            if (BTDEBUG) printf("parseScanInfo: AD Structure Info: AD type 0x%x, AD Data Length %d\r\n", type, (length - 1));
-			Serial.printf("type: %d\n\r", type);
             switch (type) {
                 case GAP_ADTYPE_FLAGS: {
                     // (0x01) -- LE Limited Discoverable Mode
@@ -269,7 +291,7 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
 
                 case GAP_ADTYPE_16BIT_MORE:
                 case GAP_ADTYPE_16BIT_COMPLETE: {
-					Serial.printf("GAP_ADTYPE_16BIT_COMPLETE\n\r");
+					RPC_DEBUG("GAP_ADTYPE_16BIT_COMPLETE\n\r");
                     uint8_t *p_uuid = buffer;
                     uint8_t i = length - 1;
 
@@ -286,7 +308,7 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
                 case GAP_ADTYPE_32BIT_COMPLETE: {
                     uint8_t *p_uuid = buffer;
                     uint8_t i = length - 1;
-					Serial.printf("GAP_ADTYPE_32BIT_COMPLETE\n\r");
+					RPC_DEBUG("GAP_ADTYPE_32BIT_COMPLETE\n\r");
                     while (i >= 4) {
                         _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 4));
 						setServiceUUID(BLEUUID(p_uuid, 4));
@@ -298,7 +320,7 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
 
                 case GAP_ADTYPE_128BIT_MORE:
                 case GAP_ADTYPE_128BIT_COMPLETE: {
-					Serial.printf("GAP_ADTYPE_128BIT_COMPLETE\n\r");
+					RPC_DEBUG("GAP_ADTYPE_128BIT_COMPLETE\n\r");
                     uint8_t *p_uuid = buffer;
                     _serviceList[_serviceCount++] = (BLEUUID(p_uuid, 16));
 					setServiceUUID(BLEUUID(p_uuid, 16));
@@ -333,7 +355,6 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
                 default: {
                     uint8_t i = 0;
                     for (i = 0; i < (length - 1); i++) {
-//                        if (BTDEBUG) printf("parseScanInfo: Unhandled Data = 0x%x\r\n", scan_info->data[(pos + i)]);
                     }
                     break;
                 }
@@ -341,8 +362,6 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
         }
         pos += length;
     }			
-					
-
 } // parseAdvertisement
 
 void BLEAdvertisedDevice::clear() {

@@ -1,8 +1,8 @@
 /*
  * BLEAdvertisedDevice.h
  *
- *  Created on: Jul 3, 2017
- *      Author: kolban
+ *  Created on: Jul 3, 2020
+ *      Author: coolc
  */
 
 #ifndef COMPONENTS_CPP_UTILS_BLEADVERTISEDDEVICE_H_
@@ -17,10 +17,6 @@
 
 class BLEScan;
 
-
-
-
-
 /**
  * @brief A representation of a %BLE advertised device found by a scan.
  *
@@ -32,23 +28,23 @@ public:
     BLEAdvertisedDevice();
     BLEAddress  getAddress();
     std::string getName();
-//	BLEUUID     getServiceDataUUID();
-//	BLEUUID     getServiceDataUUID(int i);
 	BLEUUID     getServiceUUID();
 	BLEUUID     getServiceUUID(int i);
 	uint16_t    getAppearance();
 	int8_t      getTXPower();
+	uint8_t*    getManufacturerData();
+	int         getRSSI();
+	BLEScan*    getScan();
 	std::string toString();
-	
 	bool        haveServiceUUID();
 	bool        haveTXPower();
 	bool        haveName();
     bool        haveAppearance();
-	
-	void setAddressType(T_GAP_REMOTE_ADDR_TYPE type);
+	bool        haveRSSI();
+	void        setAddressType(T_GAP_REMOTE_ADDR_TYPE type);
 	bool		isAdvertisingService(BLEUUID uuid);
 	T_GAP_REMOTE_ADDR_TYPE getAddressType();
-	
+	bool        haveManufacturerData();
 private:
 	friend class BLEScan;
 	void clear(void);
@@ -60,12 +56,9 @@ private:
 	bool m_haveRSSI;
 	bool m_haveServiceData;
 	std::vector<BLEUUID> m_serviceUUIDs;
-	
+
 	T_GAP_ADV_EVT_TYPE _advType;
 	T_GAP_REMOTE_ADDR_TYPE _addrType;
-	
-	
-	
 	BLEAddress  m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
 	
 	uint8_t m_data[31] ={0}; // array for storing formatted advertising data for receiving and sending
@@ -81,19 +74,14 @@ private:
     uint8_t     m_manufacturerData[27] = {0};
     uint8_t     m_manufacturerDataLength = 0;
 	BLEUUID     _serviceList[7];        // A 31byte advert can only fit a maximum of 7 service UUIDs of 16bit length
-	uint8_t     _serviceCount = 0;
-
-	
-	int         m_deviceType;
-//	std::vector<std::string> m_serviceData;
-	
+	uint8_t     _serviceCount = 0;	
+	int         m_deviceType;	
 	void parseAdvertisement(T_LE_CB_DATA *p_data);
 	void setAddress(BLEAddress address);
 	void setRSSI(int rssi);
 	void setScan(BLEScan* pScan);
 	void setServiceUUID(BLEUUID serviceUUID);
-	T_GAP_REMOTE_ADDR_TYPE m_addressType;
-	
+	T_GAP_REMOTE_ADDR_TYPE m_addressType;	
 };
 /**
  * @brief A callback handler for callbacks associated device scanning.
@@ -113,6 +101,4 @@ public:
 	 */
 	virtual void onResult(BLEAdvertisedDevice advertisedDevice) = 0;
 };
-
-
 #endif /* COMPONENTS_CPP_UTILS_BLEADVERTISEDDEVICE_H_ */
