@@ -4,6 +4,7 @@
  *  Created on: Jun 22, 2017
  *      Author: kolban
  */
+#define TAG "BLECharacteristic"
 #include <sstream>
 #include <string.h>
 #include <iomanip>
@@ -12,6 +13,7 @@
 #include "BLEService.h"
 #include "BLEDevice.h"
 #include "BLE2902.h"
+#include "rpc_unified_log.h"
 
 #define NULL_HANDLE (0xffff)
 bool isNotify = false;
@@ -55,10 +57,8 @@ BLEDescriptor* BLECharacteristic::createDescriptor(const char* uuid, uint16_t fl
  * @return The new BLE characteristic.
  */
 BLEDescriptor* BLECharacteristic::createDescriptor(BLEUUID uuid,uint16_t flags,uint32_t permissions,uint16_t max_len) {
-	Serial.printf("createDescriptor start\n\r");
 	BLEDescriptor* pDescriptor = new BLEDescriptor(uuid,flags,permissions,max_len);
 	addDescriptor(pDescriptor);
-	Serial.printf("createDescriptor end\n\r");
 	return pDescriptor;
 } // createCharacteristic
 
@@ -259,7 +259,6 @@ void BLECharacteristic::notify(bool is_notification) {
 //	assert(getService() != nullptr);
 //	assert(getService()->getServer() != nullptr);
     if(isNotify == true){
-    Serial.printf("BLECharacteristic   notify  into1 \n\r");
 	m_pCallbacks->onNotify(this);   // Invoke the notify callback.
 
 	// Test to see if we have a 0x2902 descriptor.  If we do, then check to see if notification is enabled
@@ -268,7 +267,6 @@ void BLECharacteristic::notify(bool is_notification) {
 	BLE2902 *p2902 = (BLE2902*)getDescriptorByUUID((uint16_t)0x2902);
 	if(is_notification) {
 		if (p2902 != nullptr && !p2902->getNotifications()) {
-			Serial.printf("BLECharacteristic   notify  into2 \n\r");
 			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_NOTIFY_DISABLED, 0);   // Invoke the notify callback.
 			return;
 		}
@@ -279,28 +277,10 @@ void BLECharacteristic::notify(bool is_notification) {
 			return;
 		}
 	}
-	Serial.printf("BLECharacteristic   notify  into \n\r");
 	for (auto &myPair : getService()->getServer()->getPeerDevices(false)) {
 		uint16_t _mtu = (myPair.second.mtu);
 		size_t length = m_value.getValue().length();
-#if 0
-		if(!is_notification) // is indication
-			m_semaphoreConfEvt.take("indicate");
-		esp_err_t errRc = ::esp_ble_gatts_send_indicate(
-				getService()->getServer()->getGattsIf(),
-				myPair.first,
-				getHandle(), length, (uint8_t*)m_value.getValue().data(), !is_notification); // The need_confirm = false makes this a notify.
-		if (errRc != ESP_OK) {
-			log_e("<< esp_ble_gatts_send_ %s: rc=%d %s",is_notification?"notify":"indicate", errRc, GeneralUtils::errorToString(errRc));
-			m_semaphoreConfEvt.give();
-			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_GATT, errRc);   // Invoke the notify callback.
-			return;
-		}
-#endif
-        Serial.printf("BLECharacteristic  getgiff():%d getHandle():%d\n\r", getService()->getgiff(), getHandle());
-//		m_semaphoreConfEvt.take("indicate");
         server_send_data(0, getService()->getHandle(), getHandle(),(uint8_t*)m_value.getValue().data(), (uint16_t)length, GATT_PDU_TYPE_ANY);
-//		m_semaphoreConfEvt.wait("indicate");
         m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::SUCCESS_NOTIFY, 0);   // Invoke the notify callback.
 	}
 	}
@@ -313,43 +293,14 @@ void BLECharacteristic::notify(bool is_notification) {
  * @param [in] pService The service with which to associate this characteristic.
  */
 void BLECharacteristic::executeCreate(BLEService* pService) {
-
-//	if (m_handle != NULL_HANDLE) {
-//		return;
-//	}
-
 	m_pService = pService; // Save the service to which this characteristic belongs.
-
-   // setAccessPermissions(GATT_PERM_READ);
-//	esp_attr_control_t control;
-//	control.auto_rsp = ESP_GATT_RSP_BY_APP;
-
-//	m_semaphoreCreateEvt.take("executeCreate");
-#if 0
-	esp_err_t errRc = ::esp_ble_gatts_add_char(
-		m_pService->getHandle(),
-		getUUID().getNative(),
-		static_cast<esp_gatt_perm_t>(m_permissions),
-		getProperties(),
-		nullptr,
-		&control); // Whether to auto respond or not.
-
-	if (errRc != ESP_OK) {
-		log_e("<< esp_ble_gatts_add_char: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-		return;
-	}
-#endif
-//	m_semaphoreCreateEvt.wait("executeCreate");
     ble_char_t CHAR;
 	CHAR.uuid_length = getUUID().getNative()->len;
-	Serial.printf("BLECharacteristic  executeCreate start\n\r");
 	memcpy(&(CHAR.uuid), &(getUUID().getNative()->uuid), CHAR.uuid_length);
-	Serial.printf("BLECharacteristic  executeCreate end\n\r");
 	CHAR.properties = getProperties();
 	CHAR.permissions = getAccessPermissions();
 	uint8_t char_handle1 = ble_create_char(m_pService->getgiff(), CHAR);
     m_handle = char_handle1;
-	Serial.printf("BLECharacteristic  executeCreate end\n\r");
 	BLEDescriptor* pDescriptor = m_descriptorMap.getFirst();
 	while (pDescriptor != nullptr) {
 		pDescriptor->executeCreate(this);
@@ -366,7 +317,7 @@ void BLECharacteristic::executeCreate(BLEService* pService) {
 void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
 
     ble_service_cb_data_t *cb_data = (ble_service_cb_data_t *)p_data;
-    Serial.println("ble_gatt_server_callback\n\r");
+    RPC_DEBUG("ble_gatt_server_callback\n\r");
     switch (cb_data->event)
     {
     case SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION:
@@ -385,7 +336,7 @@ void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_da
     {
 		if (getHandle() == cb_data->attrib_handle)
 		{
-		Serial.println("SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE\n\r");
+		RPC_DEBUG("SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE\n\r");
 		m_pCallbacks->onRead(this);
 		uint16_t maxOffset =  getService()->getServer()->getPeerMTU(getService()->getServer()->getconnId()) - 1;
 		std::string value = m_value.getValue();
