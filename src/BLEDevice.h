@@ -33,6 +33,7 @@ public:
 	static BLEAdvertising* 	getAdvertising();
 	static void		   		startAdvertising();
 	static BLEServer*       getServer();
+	static BLEClient*       getClient();
     static uint16_t 	m_appId;
     static std::string  ble_name;
 private:

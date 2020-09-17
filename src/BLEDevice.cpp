@@ -1,7 +1,8 @@
+#define TAG "device"
 #include <map>     // Part of C++ Standard library
 #include <sstream> // Part of C++ Standard library
 #include <iomanip> // Part of C++ Standard library
-
+#include "rpc_unified_log.h"
 #include "BLEDevice.h"
 #include <Arduino.h>
 
@@ -27,7 +28,6 @@ void ble_authen_state_evt_handler(uint8_t conn_id, uint8_t new_state, uint16_t c
 T_GAP_DEV_STATE ble_gap_dev_state = {0, 0, 0, 0, 0}; /**< GAP device state */
 T_GAP_CONN_STATE ble_gap_conn_state = GAP_CONN_STATE_DISCONNECTED;
 T_APP_LINK ble_clinet_link_table[BLE_LE_MAX_LINKS];
-RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_SLAVE; // 0:close 1:server 2:client
 
 /**
  * @brief Create a new instance of a server.
@@ -36,8 +36,7 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_SLAVE; // 0:close 1:server 2:cli
 /* STATIC */ BLEServer *BLEDevice::createServer()
 {
     m_pServer = new BLEServer();
-    //	m_pServer->createApp(m_appId++);
-    Serial.printf("BLE create Server\n\r");
+    RPC_DEBUG("BLE create Server\n\r");
     return m_pServer;
 } // createServer
 
@@ -48,9 +47,14 @@ RPC_T_GAP_ROLE ble_dev_role = RPC_GAP_LINK_ROLE_SLAVE; // 0:close 1:server 2:cli
 /* STATIC */ BLEClient *BLEDevice::createClient()
 {
     m_pClient = new BLEClient();
-
     return m_pClient;
 } // createClient
+
+BLEClient *BLEDevice::getClient()
+{
+    return m_pClient;
+}
+
 
 /**
  * @brief Retrieve the Scan object that we use for scanning.
@@ -115,13 +119,8 @@ void BLEDevice::startAdvertising()
         uint8_t device_name[GAP_DEVICE_NAME_LEN] = {0};
         memcpy(device_name, deviceName.c_str(), GAP_DEVICE_NAME_LEN);
         le_set_gap_param(GAP_PARAM_DEVICE_NAME, GAP_DEVICE_NAME_LEN, device_name);
-
-        /*
-     * Activate the Bluetooth controller
-     */
-        //ble_start();
     }
-    Serial.printf("BLE init success\n\r");
+    RPC_DEBUG("BLE init success\n\r");
     return;
 } // init
 
@@ -138,7 +137,14 @@ void BLEDevice::startAdvertising()
     {
         BLEDevice::getScan()->gapCallbackDefault(cb_type, p_cb_data);
     }
+     
+    if (BLEDevice::m_pClient != nullptr) {
+		BLEDevice::m_pClient->handleGAPEvent(cb_type, p_cb_data);
+	}
 
+    if(m_bleAdvertising != nullptr) {
+		BLEDevice::getAdvertising()->handleGAPEvent(cb_type, p_cb_data);
+	}
     return ret;
 } // gapEventHandler
 
@@ -202,7 +208,7 @@ void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client)
     T_APP_RESULT result = APP_RESULT_SUCCESS;
     if (BLEDevice::m_pServer != nullptr)
     {
-        Serial.printf("into device :: gattServerEventHandler\n\r");
+        RPC_DEBUG("into device :: gattServerEventHandler\n\r");
 
         BLEDevice::m_pServer->handleGATTServerEvent(service_id, p_data);
     }
@@ -223,13 +229,13 @@ void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     uint8_t conn_id;
     memcpy(&gap_msg, &p_gap_msg->u.param, sizeof(p_gap_msg->u.param));
 
-    Serial.printf("ble_central_app_handle_gap_msg: subtype %d\n\r", p_gap_msg->subtype);
+    RPC_DEBUG("ble_central_app_handle_gap_msg: subtype %d\n\r", p_gap_msg->subtype);
 
     switch (p_gap_msg->subtype)
     {
     case GAP_MSG_LE_DEV_STATE_CHANGE:
     {
-        Serial.printf("GAP_MSG_LE_DEV_STATE_CHANGE\n\r");
+        RPC_DEBUG("GAP_MSG_LE_DEV_STATE_CHANGE\n\r");
         ble_dev_state_evt_handler(gap_msg.msg_data.gap_dev_state_change.new_state,
                                   gap_msg.msg_data.gap_dev_state_change.cause);
     }
@@ -237,7 +243,7 @@ void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     case GAP_MSG_LE_CONN_STATE_CHANGE:
     {
 
-        Serial.printf("GAP_MSG_LE_CONN_STATE_CHANGE\n\r");
+        RPC_DEBUG("GAP_MSG_LE_CONN_STATE_CHANGE\n\r");
         ble_conn_state_evt_handler(gap_msg.msg_data.gap_conn_state_change.conn_id,
                                    (T_GAP_CONN_STATE)gap_msg.msg_data.gap_conn_state_change.new_state,
                                    gap_msg.msg_data.gap_conn_state_change.disc_cause);
@@ -245,7 +251,7 @@ void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     break;
     case GAP_MSG_LE_CONN_PARAM_UPDATE:
     {
-        Serial.printf("GAP_MSG_LE_CONN_PARAM_UPDATE\n\r");
+        RPC_DEBUG("GAP_MSG_LE_CONN_PARAM_UPDATE\n\r");
         ble_param_update_evt_handler(gap_msg.msg_data.gap_conn_param_update.conn_id,
                                      gap_msg.msg_data.gap_conn_param_update.status,
                                      gap_msg.msg_data.gap_conn_param_update.cause);
@@ -253,14 +259,14 @@ void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     break;
     case GAP_MSG_LE_CONN_MTU_INFO:
     {
-        Serial.printf("GAP_MSG_LE_CONN_MTU_INFO\n\r");
+        RPC_DEBUG("GAP_MSG_LE_CONN_MTU_INFO\n\r");
         ble_mtu_info_evt_handler(gap_msg.msg_data.gap_conn_mtu_info.conn_id,
                                  gap_msg.msg_data.gap_conn_mtu_info.mtu_size);
     }
     break;
     case GAP_MSG_LE_AUTHEN_STATE_CHANGE:
     {
-        Serial.printf("GAP_MSG_LE_AUTHEN_STATE_CHANGE\n\r");
+        RPC_DEBUG("GAP_MSG_LE_AUTHEN_STATE_CHANGE\n\r");
         ble_authen_state_evt_handler(gap_msg.msg_data.gap_authen_state.conn_id,
                                      gap_msg.msg_data.gap_authen_state.new_state,
                                      gap_msg.msg_data.gap_authen_state.status);
@@ -268,52 +274,52 @@ void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     break;
     case GAP_MSG_LE_BOND_PASSKEY_DISPLAY:
     {
-        Serial.printf("GAP_MSG_LE_BOND_PASSKEY_DISPLAY\n\r");
+        RPC_DEBUG("GAP_MSG_LE_BOND_PASSKEY_DISPLAY\n\r");
         conn_id = gap_msg.msg_data.gap_bond_just_work_conf.conn_id;
         le_bond_just_work_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
     }
     break;
     case GAP_MSG_LE_BOND_PASSKEY_INPUT:
     {
-        Serial.printf("GAP_MSG_LE_BOND_PASSKEY_INPUT\n\r");
+        RPC_DEBUG("GAP_MSG_LE_BOND_PASSKEY_INPUT\n\r");
         uint32_t display_value = 0;
         conn_id = gap_msg.msg_data.gap_bond_passkey_display.conn_id;
         le_bond_get_display_key(conn_id, &display_value);
-        Serial.printf("GAP_MSG_LE_BOND_PASSKEY_DISPLAY:passkey %d\n\r", display_value);
+        RPC_DEBUG("GAP_MSG_LE_BOND_PASSKEY_DISPLAY:passkey %d\n\r", display_value);
         le_bond_passkey_display_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
-        Serial.printf("GAP_MSG_LE_BOND_PASSKEY_DISPLAY:passkey %d\n\r", display_value);
+        RPC_DEBUG("GAP_MSG_LE_BOND_PASSKEY_DISPLAY:passkey %d\n\r", display_value);
     }
     break;
     case GAP_MSG_LE_BOND_OOB_INPUT:
     {
-        Serial.printf("GAP_MSG_LE_BOND_OOB_INPUT\n\r");
+        RPC_DEBUG("GAP_MSG_LE_BOND_OOB_INPUT\n\r");
         uint8_t oob_data[GAP_OOB_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         conn_id = gap_msg.msg_data.gap_bond_oob_input.conn_id;
-        Serial.printf("GAP_MSG_LE_BOND_OOB_INPUT\r\n\n\r");
+        RPC_DEBUG("GAP_MSG_LE_BOND_OOB_INPUT\r\n\n\r");
         le_bond_set_param(GAP_PARAM_BOND_OOB_DATA, GAP_OOB_LEN, oob_data);
         le_bond_oob_input_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
     }
     break;
     case GAP_MSG_LE_BOND_USER_CONFIRMATION:
     {
-        Serial.printf("GAP_MSG_LE_BOND_USER_CONFIRMATION\n\r");
+        RPC_DEBUG("GAP_MSG_LE_BOND_USER_CONFIRMATION\n\r");
         uint32_t display_value = 0;
         conn_id = gap_msg.msg_data.gap_bond_user_conf.conn_id;
         le_bond_get_display_key(conn_id, &display_value);
-        Serial.printf("GAP_MSG_LE_BOND_USER_CONFIRMATION: passkey %ld\r\n\n\r", display_value);
+        RPC_DEBUG("GAP_MSG_LE_BOND_USER_CONFIRMATION: passkey %ld\r\n\n\r", display_value);
         le_bond_user_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
     }
     break;
     case GAP_MSG_LE_BOND_JUST_WORK:
     {
-        Serial.printf("GAP_MSG_LE_BOND_JUST_WORK\n\r");
+        RPC_DEBUG("GAP_MSG_LE_BOND_JUST_WORK\n\r");
         conn_id = gap_msg.msg_data.gap_bond_just_work_conf.conn_id;
         le_bond_just_work_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
-        Serial.printf("GAP_MSG_LE_BOND_JUST_WORK\r\n\n\r");
+        RPC_DEBUG("GAP_MSG_LE_BOND_JUST_WORK\r\n\n\r");
     }
     break;
     default:
-        Serial.printf("gapMsgHandlerDefault: unknown subtype %d\n\r", p_gap_msg->subtype);
+        RPC_DEBUG("gapMsgHandlerDefault: unknown subtype %d\n\r", p_gap_msg->subtype);
         break;
     }
 }
@@ -329,73 +335,26 @@ void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
  */
 void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uint16_t disc_cause)
 {
-
-    //    Serial.printf("ble_conn_state_evt_handler: conn_id %d old_state %d new_state %d, disc_cause 0x%x\n\r", conn_id, ble_gap_conn_state, new_state, disc_cause);
-
-    //     if (ble_dev_role == RPC_GAP_LINK_ROLE_MASTER)
-    //     {
-
-    //         if (conn_id >= BLE_LE_MAX_LINKS)
-    //         {
-    //             return;
-    //         }
-
-    //         ble_clinet_link_table[conn_id].conn_state = new_state;
-
-    //         switch (new_state)
-    //         {
-    //         case GAP_CONN_STATE_DISCONNECTED:
-    //         {
-    //             BLEDevice::getServer()->getCallbacks()->onDisconnect(BLEDevice::getServer());
-    //             BLEDevice::getServer()->removePeerDevice(conn_id, false);
-    //             if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE)) && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
-    //             {
-    //                 Serial.printf("connection lost, conn_id %d, cause 0x%x\n\r", conn_id, disc_cause);
-    //             }
-    //             Serial.printf("[BLE Device] Disconnected conn_id %d\n\r", conn_id);
-    //             memset(&ble_clinet_link_table[conn_id], 0, sizeof(T_APP_LINK));
-    //             break;
-    //         }
-    //         case GAP_CONN_STATE_CONNECTED:
-    //         {
-    //             //m_connId = conn_id;
-    //             Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED\n\r");
-    // //            BLEDevice::getServer()->addPeerDevice((void*)BLEDevice::getServer(), false, conn_id);
-    // //            BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
-
-    //             le_get_conn_addr(conn_id, ble_clinet_link_table[conn_id].bd_addr, (uint8_t *)&ble_clinet_link_table[conn_id].bd_type);
-    //             Serial.printf("[BLE Device] Connected conn_id %d\n\r", conn_id);
-    //             {
-    //                 uint8_t tx_phy;
-    //                 uint8_t rx_phy;
-    //                 le_get_conn_param(GAP_PARAM_CONN_TX_PHY_TYPE, &tx_phy, conn_id);
-    //                 le_get_conn_param(GAP_PARAM_CONN_RX_PHY_TYPE, &rx_phy, conn_id);
-    //                 Serial.printf("GAP_CONN_STATE_CONNECTED: tx_phy %d, rx_phy %d\n\r", tx_phy, rx_phy);
-    //             }
-    //             break;
-    //         }
-    //         default:
-    //             break;
-    //         }
-    //     }
-    //     else
-    //     {
     switch (new_state)
     {
     case GAP_CONN_STATE_DISCONNECTED:
     {
         if ((disc_cause != (HCI_ERR | HCI_ERR_REMOTE_USER_TERMINATE)) && (disc_cause != (HCI_ERR | HCI_ERR_LOCAL_HOST_TERMINATE)))
         {
-
-            Serial.printf("connection lost cause 0x%x\n\r", disc_cause);
+            RPC_DEBUG("connection lost cause 0x%x\n\r", disc_cause);
         }
-        Serial.printf("[BLE Device] BT Disconnected, start ADV\n\r\n\r");
+        if (BLEDevice::getServer() != nullptr)
+        {
+            if (BLEDevice::getServer()->getCallbacks() != nullptr)
+            {
+                BLEDevice::getServer()->getCallbacks()->onDisconnect(BLEDevice::getServer());
+            }
+        }
      
         break;
     }
     case GAP_CONN_STATE_CONNECTED:
     {
-        Serial.printf("[BLE Device] Connected GAP_CONN_STATE_CONNECTED111111\n\r");
         if (BLEDevice::getServer() != nullptr)
         {
             BLEDevice::getServer()->addPeerDevice((void *)BLEDevice::getServer(), false, conn_id);
@@ -405,19 +364,10 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
             }
         }
 
-        // uint16_t conn_interval;
-        // uint16_t conn_latency;
-        // uint16_t conn_supervision_timeout;
-        // uint8_t remote_bd[6];
-        // T_GAP_REMOTE_ADDR_TYPE remote_bd_type;
-
-        // le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &conn_interval, conn_id);
-        // le_get_conn_param(GAP_PARAM_CONN_LATENCY, &conn_latency, conn_id);
-        // le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &conn_supervision_timeout, conn_id);
-        // le_get_conn_addr(conn_id, remote_bd, (uint8_t *)&remote_bd_type);
-
-        // Serial.printf("GAP_CONN_STATE_CONNECTED:remote_bd %x:%x:%x:%x:%x:%x, remote_addr_type %d, conn_interval 0x%x, conn_latency 0x%x, conn_supervision_timeout 0x%x\n\r", remote_bd[0], remote_bd[1], remote_bd[2], remote_bd[3], remote_bd[4], remote_bd[5], remote_bd_type, conn_interval, conn_latency, conn_supervision_timeout);
-        // Serial.printf("[BLE Device] BT Connected\n\r\n\r");
+        if(BLEDevice::getClient() != nullptr)
+        {
+            // BLEDevice::updatePeerDevice(BLEDevice::getClient(), true, BLEDevice::getClient()->getGattcIf());
+        }
         break;
     }
     default:
@@ -437,32 +387,32 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
  */
 void ble_dev_state_evt_handler(T_GAP_DEV_STATE new_state, uint16_t cause)
 {
-    Serial.printf("ble_dev_state_evt_handler: init state %d, adv state %d, cause 0x%x\n\r", new_state.gap_init_state, new_state.gap_adv_state, cause);
+    RPC_DEBUG("ble_dev_state_evt_handler: init state %d, adv state %d, cause 0x%x\n\r", new_state.gap_init_state, new_state.gap_adv_state, cause);
     if (ble_gap_dev_state.gap_init_state != new_state.gap_init_state)
     {
         if (new_state.gap_init_state == GAP_INIT_STATE_STACK_READY)
         {
-            Serial.printf("GAP stack ready\n\r");
+            RPC_DEBUG("GAP stack ready\n\r");
             // BLE stack is ready
             uint8_t bt_addr[6];
             gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-            Serial.printf("[BLE Device] Local BT addr: %2x:%2x:%2x:%2x:%2x:%2x\n\r", bt_addr[5], bt_addr[4], bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0]);
+            RPC_DEBUG("[BLE Device] Local BT addr: %2x:%2x:%2x:%2x:%2x:%2x\n\r", bt_addr[5], bt_addr[4], bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0]);
         }
     }
 
     // Assign different tasks according to different roles
-    // As a Client
-    if (ble_dev_role == RPC_GAP_LINK_ROLE_MASTER)
+    // As a Client   
+    if (BLEDevice::getClient() != nullptr)
     {
         if (ble_gap_dev_state.gap_scan_state != new_state.gap_scan_state)
         {
             if (new_state.gap_scan_state == GAP_SCAN_STATE_IDLE)
             {
-                Serial.printf("[BLE Device] GAP scan stop\n\r");
+                RPC_DEBUG("[BLE Device] GAP scan stop\n\r");
             }
             else if (new_state.gap_scan_state == GAP_SCAN_STATE_SCANNING)
             {
-                Serial.printf("[BLE Device] GAP scan start\n\r");
+                RPC_DEBUG("[BLE Device] GAP scan start\n\r");
             }
         }
     }
@@ -475,16 +425,16 @@ void ble_dev_state_evt_handler(T_GAP_DEV_STATE new_state, uint16_t cause)
             {
                 if (new_state.gap_adv_sub_state == GAP_ADV_TO_IDLE_CAUSE_CONN)
                 {
-                    Serial.printf("[BLE Device] GAP adv stopped: because connection created\n\r");
+                    RPC_DEBUG("[BLE Device] GAP adv stopped: because connection created\n\r");
                 }
                 else
                 {
-                    Serial.printf("[BLE Device] GAP adv stopped\n\r");
+                    RPC_DEBUG("[BLE Device] GAP adv stopped\n\r");
                 }
             }
             else if (new_state.gap_adv_state == GAP_ADV_STATE_ADVERTISING)
             {
-                Serial.printf("[BLE Device] GAP adv start\n\r");
+                RPC_DEBUG("[BLE Device] GAP adv start\n\r");
             }
         }
     }
@@ -513,17 +463,17 @@ void ble_param_update_evt_handler(uint8_t conn_id, uint8_t status, uint16_t caus
         le_get_conn_param(GAP_PARAM_CONN_INTERVAL, &conn_interval, conn_id);
         le_get_conn_param(GAP_PARAM_CONN_LATENCY, &conn_slave_latency, conn_id);
         le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &conn_supervision_timeout, conn_id);
-        Serial.printf("connParamUpdateEvtHandlerDefault update success:conn_interval 0x%x, conn_slave_latency 0x%x, conn_supervision_timeout 0x%x\n\r", conn_interval, conn_slave_latency, conn_supervision_timeout);
+        RPC_DEBUG("connParamUpdateEvtHandlerDefault update success:conn_interval 0x%x, conn_slave_latency 0x%x, conn_supervision_timeout 0x%x\n\r", conn_interval, conn_slave_latency, conn_supervision_timeout);
         break;
     }
     case GAP_CONN_PARAM_UPDATE_STATUS_FAIL:
     {
-        Serial.printf("connParamUpdateEvtHandlerDefault update failed: cause 0x%x\n\r", cause);
+        RPC_DEBUG("connParamUpdateEvtHandlerDefault update failed: cause 0x%x\n\r", cause);
         break;
     }
     case GAP_CONN_PARAM_UPDATE_STATUS_PENDING:
     {
-        Serial.printf("connParamUpdateEvtHandlerDefault update pending: conn_id %d\n\r", conn_id);
+        RPC_DEBUG("connParamUpdateEvtHandlerDefault update pending: conn_id %d\n\r", conn_id);
         break;
     }
     default:
@@ -540,7 +490,11 @@ void ble_param_update_evt_handler(uint8_t conn_id, uint8_t status, uint16_t caus
  */
 void ble_mtu_info_evt_handler(uint8_t conn_id, uint16_t mtu_size)
 {
-    Serial.printf("app_handle_conn_mtu_info_evt: conn_id %d, mtu_size %d\n\r", conn_id, mtu_size);
+    // if(client->conn_id = conn_id)
+    // {
+    //     client->mtu_size = mtu_size;
+    // }
+    RPC_DEBUG("app_handle_conn_mtu_info_evt: conn_id %d, mtu_size %d\n\r", conn_id, mtu_size);
 }
 
 /**
@@ -554,13 +508,13 @@ void ble_mtu_info_evt_handler(uint8_t conn_id, uint16_t mtu_size)
  */
 void ble_authen_state_evt_handler(uint8_t conn_id, uint8_t new_state, uint16_t cause)
 {
-    Serial.printf("app_handle_authen_state_evt:conn_id %d, cause 0x%x\n\r", conn_id, cause);
+    RPC_DEBUG("app_handle_authen_state_evt:conn_id %d, cause 0x%x\n\r", conn_id, cause);
 
     switch (new_state)
     {
     case GAP_AUTHEN_STATE_STARTED:
     {
-        Serial.printf("app_handle_authen_state_evt: GAP_AUTHEN_STATE_STARTED\n\r");
+        RPC_DEBUG("app_handle_authen_state_evt: GAP_AUTHEN_STATE_STARTED\n\r");
     }
     break;
 
@@ -568,20 +522,20 @@ void ble_authen_state_evt_handler(uint8_t conn_id, uint8_t new_state, uint16_t c
     {
         if (cause == GAP_SUCCESS)
         {
-            Serial.printf("Pair success\n\r");
-            Serial.printf("app_handle_authen_state_evt: GAP_AUTHEN_STATE_COMPLETE pair success\n\r");
+            RPC_DEBUG("Pair success\n\r");
+            RPC_DEBUG("app_handle_authen_state_evt: GAP_AUTHEN_STATE_COMPLETE pair success\n\r");
         }
         else
         {
-            Serial.printf("Pair failed: cause 0x%x\n\r", cause);
-            Serial.printf("app_handle_authen_state_evt: GAP_AUTHEN_STATE_COMPLETE pair failed\n\r");
+            RPC_DEBUG("Pair failed: cause 0x%x\n\r", cause);
+            RPC_DEBUG("app_handle_authen_state_evt: GAP_AUTHEN_STATE_COMPLETE pair failed\n\r");
         }
     }
     break;
 
     default:
     {
-        Serial.printf("app_handle_authen_state_evt: unknown newstate %d\n\r", new_state);
+        RPC_DEBUG("app_handle_authen_state_evt: unknown newstate %d\n\r", new_state);
     }
     break;
     }
