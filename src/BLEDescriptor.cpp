@@ -15,7 +15,6 @@
 
 #define NULL_HANDLE (0xffff)
 
-
 /**
  * @brief BLEDescriptor constructor.
  */
@@ -62,6 +61,17 @@ void BLEDescriptor::setValue(std::string value) {
 	setValue((uint8_t*) value.data(), value.length());
 } // setValue
 
+void BLEDescriptor::setAccessPermissions(uint32_t perm) {
+	m_permissions = perm;
+}
+
+/**
+ * @brief Set the callback handlers for this descriptor.
+ * @param [in] pCallbacks An instance of a callback structure used to define any callbacks for the descriptor.
+ */
+void BLEDescriptor::setCallbacks(BLEDescriptorCallbacks* pCallback) {
+	m_pCallback = pCallback;
+} // setCallbacks
 
 /**
  * @brief Get the UUID of the descriptor.
@@ -120,6 +130,17 @@ void BLEDescriptor::executeCreate(BLECharacteristic* pCharacteristic) {
 	RPC_DEBUG("desc_handle: %d\n\r", desc_handle);
 } // executeCreate
 
+/**
+ * @brief Return a string representation of the descriptor.
+ * @return A string representation of the descriptor.
+ */
+std::string BLEDescriptor::toString() {
+	char hex[5];
+	snprintf(hex, sizeof(hex), "%04x", m_handle);
+	std::string res = "UUID: " + m_bleUUID.toString() + ", handle: 0x" + hex;
+	return res;
+} // toString
+
 
 BLEDescriptorCallbacks::~BLEDescriptorCallbacks() {}
 
@@ -159,10 +180,18 @@ void BLEDescriptor::handleGATTServerEvent(
     }
     case SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE:
     {
+		if(getHandle() == cb_data->attrib_handle){
+			m_pCallback->onRead(this);
+		}
+
         break;
     }
     case SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE:
     {
+		if(getHandle() == cb_data->attrib_handle) {
+		setValue(cb_data->cb_data_context.write_data.p_value, cb_data->cb_data_context.write_data.length);
+		m_pCallback->onWrite(this);
+		}
         break;
     }
     default:
