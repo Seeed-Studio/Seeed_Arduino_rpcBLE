@@ -140,7 +140,15 @@ int BLEClient::getRssi() {
 	return rssiValue;
 } // getRssi
 
+uint16_t BLEClient::getMTU() {
+	return m_mtu;
+}
 
+
+uint16_t BLEClient::setMTU(uint16_t mtu_size) {
+	m_mtu = mtu_size;
+	return m_mtu;
+}
 /**
  * @brief Get the value of a specific characteristic associated with a specific service.
  * @param [in] serviceUUID The service that owns the characteristic.

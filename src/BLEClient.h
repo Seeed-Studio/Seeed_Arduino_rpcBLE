@@ -53,6 +53,8 @@ public:
     std::string                                getValue(BLEUUID serviceUUID, BLEUUID characteristicUUID);   // Get the value of a given characteristic at a given service.
 	T_APP_RESULT                               handleGAPEvent(uint8_t cb_type, void *p_cb_data);
     std::string                                toString();                    // Return a string representation of this client.
+	uint16_t								   getMTU();
+	uint16_t			                       setMTU(uint16_t mtu_size);
 	uint16_t         m_appId;
 private:
     friend class BLEDevice;
@@ -70,9 +72,9 @@ private:
 	
 	BLEFreeRTOS::Semaphore m_semaphoreSearchCmplEvt = BLEFreeRTOS::Semaphore("SearchCmplEvt");
 	BLEFreeRTOS::Semaphore m_semaphoreRssiCmplEvt   = BLEFreeRTOS::Semaphore("RssiCmplEvt");
-
 	void clearServices();   // Clear any existing services.
 	std::map<std::string, BLERemoteService*> m_servicesMap;
+	uint16_t m_mtu = 23;
 }; // class BLEDevice
 
 
@@ -86,9 +88,5 @@ public:
 	virtual void onDisconnect(BLEClient *pClient) = 0;
 
 };
-
-
-
-
 
 #endif /* MAIN_BLEDEVICE_H_ */
