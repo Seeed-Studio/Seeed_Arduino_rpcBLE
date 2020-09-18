@@ -262,12 +262,6 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
 
     uint8_t buffer[32];
     uint8_t pos = 0;
-	RPC_DEBUG("scan_info data:\n\r");
-	for(int i = 0; i < scan_info->data_len; i++)
-	{
-		RPC_DEBUG("%02x, ", scan_info->data[i]);
-	}
-	RPC_DEBUG("\n\r");
     while (pos < scan_info->data_len) {
         // Length of the AD structure.
         uint8_t length = scan_info->data[pos++];    // length of following data field = length of advert data field + 1 (adtype)
