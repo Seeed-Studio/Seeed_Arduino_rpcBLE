@@ -10,6 +10,14 @@
 #include "BLECharacteristic.h"
 #include "BLEDescriptor.h"
 
+/**
+ * @brief Return the descriptor by UUID.
+ * @param [in] UUID The UUID to look up the descriptor.
+ * @return The descriptor.  If not present, then nullptr is returned.
+ */
+BLEDescriptor* BLEDescriptorMap::getByUUID(const char* uuid) {
+	return getByUUID(BLEUUID(uuid));
+}
 
 /**
  * @brief Return the descriptor by UUID.
@@ -25,8 +33,15 @@ BLEDescriptor* BLEDescriptorMap::getByUUID(BLEUUID uuid) {
 	return nullptr;
 } // getByUUID
 
-
-
+/**
+ * @brief Set the descriptor by UUID.
+ * @param [in] uuid The uuid of the descriptor.
+ * @param [in] characteristic The descriptor to cache.
+ * @return N/A.
+ */
+void BLEDescriptorMap::setByUUID(const char* uuid, BLEDescriptor* pDescriptor){
+	m_uuidMap.insert(std::pair<BLEDescriptor*, std::string>(pDescriptor, uuid));
+} // setByUUID
 
 /**
  * @brief Set the descriptor by UUID.
@@ -49,8 +64,6 @@ void BLEDescriptorMap::setByUUID(BLEUUID uuid, BLEDescriptor* pDescriptor) {
 void BLEDescriptorMap::setByHandle(uint16_t handle, BLEDescriptor* pDescriptor) {
 	m_handleMap.insert(std::pair<uint16_t, BLEDescriptor*>(handle, pDescriptor));
 } // setByHandle
-
-
 
 
 /**
