@@ -82,17 +82,13 @@ BLEServerCallbacks* BLEServer::getCallbacks() {
 	return m_pServerCallbacks;
 }
 
-
-
 void BLEServerCallbacks::onConnect(BLEServer* pServer) {
 
 } // onConnect
 
-
 void BLEServerCallbacks::onDisconnect(BLEServer* pServer) {
 
 } // onDisconnect
-
 
 void BLEServer::addPeerDevice(void* peer, bool _client, uint16_t conn_id) {
 	conn_status_t status = {
@@ -117,6 +113,86 @@ uint16_t  BLEServer::getconnId(){
 	return m_connId;
 }
 
+/* multi connect support */
+/* TODO do some more tweaks */
+void BLEServer::updatePeerMTU(uint16_t conn_id, uint16_t mtu) {
+	// set mtu in conn_status_t
+	const std::map<uint16_t, conn_status_t>::iterator it = m_connectedServersMap.find(conn_id);
+	if (it != m_connectedServersMap.end()) {
+		it->second.mtu = mtu;
+		std::swap(m_connectedServersMap[conn_id], it->second);
+	}
+}
+
+/**
+ * @brief Return the number of connected clients.
+ * @return The number of connected clients.
+ */
+uint32_t BLEServer::getConnectedCount() {
+	return m_connectedCount;
+} // getConnectedCount
+
+uint32_t BLEServer::setConnectedCount() {
+	return m_connectedCount++;
+} // getConnectedCount
+
+
+/**
+ * @brief Get a %BLE Service by its UUID
+ * @param [in] uuid The UUID of the new service.
+ * @return A reference to the service object.
+ */
+BLEService* BLEServer::getServiceByUUID(const char* uuid) {
+	return m_serviceMap.getByUUID(BLEUUID(uuid));
+}
+
+/**
+ * @brief Get a %BLE Service by its UUID
+ * @param [in] uuid The UUID of the new service.
+ * @return A reference to the service object.
+ */
+BLEService* BLEServer::getServiceByUUID(BLEUUID uuid) {
+	return m_serviceMap.getByUUID(uuid);
+}
+
+/**
+ * Allow to connect GATT server to peer device
+ * Probably can be used in ANCS for iPhone
+ */
+bool BLEServer::connect(BLEAddress address) {
+
+} // connect
+
+void BLEServer::disconnect(uint16_t connId) {
+
+}
+
+/**
+ * Update connection parameters can be called only after connection has been established
+ */
+void BLEServer::updateConnParams(uint8_t  conn_id,
+                                 uint16_t  conn_interval_min,
+                                 uint16_t  conn_interval_max,
+                                 uint16_t  conn_latency,
+                                 uint16_t  supervision_timeout,
+                                 uint16_t  ce_length_min,
+                                 uint16_t  ce_length_max) {
+	    uint8_t  update_conn_id = conn_id;
+        uint16_t update_conn_interval_min = conn_interval_min;
+        uint16_t update_conn_interval_max = conn_interval_max;
+        uint16_t update_conn_latency = conn_latency;
+        uint16_t update_supervision_timeout = supervision_timeout;
+        uint16_t update_ce_length_min = ce_length_min;
+        uint16_t update_ce_length_max = ce_length_max;
+		le_update_conn_param(update_conn_id,
+                            update_conn_interval_min,
+                            update_conn_interval_max,
+                            update_conn_latency,
+                            update_supervision_timeout,
+                            update_ce_length_min,
+                            update_ce_length_max
+                            );
+}
 
 /**
  * @brief Retrieve the advertising object that can be used to advertise the existence of the server.
@@ -142,6 +218,16 @@ void BLEServer::startAdvertising() {
 std::map<uint16_t, conn_status_t> BLEServer::getPeerDevices(bool _client) {
 	return m_connectedServersMap;
 }
+
+/*
+ * Remove service
+ */
+void BLEServer::removeService(BLEService* service) {
+	service->stop();
+	service->executeDelete(service->getgiff());	
+	m_serviceMap.removeService(service);
+}
+
 
 /**
  * @brief Handle a GATT Server Event.

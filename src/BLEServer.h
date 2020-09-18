@@ -33,24 +33,24 @@ typedef struct {
  */
 class BLEServiceMap {
 public:	
+    BLEService* getByUUID(const char* uuid);
 	BLEService* getByUUID(BLEUUID uuid, uint8_t inst_id = 0);
     BLEService* getByHandle(uint16_t handle);
     void        setByUUID(BLEUUID uuid, BLEService* service);
     void        setByHandle(uint16_t handle, BLEService* service);
+    void        setByUUID(const char* uuid, BLEService* service);
     BLEService* getFirst();
     BLEService* getNext();
     std::string toString();
-    void         handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
-
-    std::map<uint16_t, conn_status_t> getPeerDevices(bool client);
+    void        handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
+    void 		removeService(BLEService *service);
+    int 		getRegisteredServiceCount();
 private:
     std::map<BLEService*, std::string> m_uuidMap;
     std::map<uint16_t, BLEService*>    m_handleMap;
     std::map<BLEService*, std::string>::iterator m_iterator;
 
 };
-
-
 
 /**
  * @brief The model of a %BLE server.
@@ -62,15 +62,28 @@ public:
     void            setCallbacks(BLEServerCallbacks* pCallbacks);
     BLEAdvertising* getAdvertising();
     void            startAdvertising();
-    uint16_t		m_appId;
-
-    void addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
-    bool removePeerDevice(uint16_t conn_id, bool client);
-    uint16_t getPeerMTU(uint16_t conn_id);
-    
-    uint16_t getconnId();
+    uint32_t        getConnectedCount();
+    uint32_t        setConnectedCount();
+    void 			removeService(BLEService* service);
+    BLEService* 	getServiceByUUID(const char* uuid);
+    BLEService* 	getServiceByUUID(BLEUUID uuid);
+    void            addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
+    bool            removePeerDevice(uint16_t conn_id, bool client);
+    uint16_t        getPeerMTU(uint16_t conn_id);
+    bool 			connect(BLEAddress address);
+    void 			disconnect(uint16_t connId);
+    void			updateConnParams(uint8_t  conn_id,
+                                     uint16_t  conn_interval_min,
+                                     uint16_t  conn_interval_max,
+                                     uint16_t  conn_latency,
+                                     uint16_t  supervision_timeout,
+                                     uint16_t  ce_length_min,
+                                     uint16_t  ce_length_max);
+    uint16_t        getconnId();
     BLEServerCallbacks* getCallbacks();
     std::map<uint16_t, conn_status_t> getPeerDevices(bool client);
+    void updatePeerMTU(uint16_t connId, uint16_t mtu);
+    uint16_t		m_appId;
 private:
     BLEServer();
     friend class BLEDevice;
