@@ -20,13 +20,14 @@ public:
     BLEUUID     getUUID();
 	uint16_t    getHandle();
 	std::string toString(void);
-	
 	BLERemoteCharacteristic* getRemoteCharacteristic();
 	void        writeValue(uint8_t* data, size_t length, bool response = false);
 	void        writeValue(std::string newValue, bool response = false);
 	void        writeValue(uint8_t newValue, bool response = false);
-
-
+    std::string readValue(void);
+	uint8_t     readUInt8(void);
+    uint16_t    readUInt16(void);
+	uint32_t    readUInt32(void);	
 private:
 	friend class BLERemoteCharacteristic;
 	friend class BLEClient;
@@ -37,9 +38,9 @@ private:
 	);
 	uint16_t                 m_handle;                  // Server handle of this descriptor.
 	BLEUUID                  m_uuid;                    // UUID of this descriptor.
+	std::string              m_value;                   // Last received value of the descriptor.
 	BLERemoteCharacteristic* m_pRemoteCharacteristic;   // 
-	
-	BLEFreeRTOS::Semaphore      m_semaphoreReadDescrEvt      = BLEFreeRTOS::Semaphore("ReadDescrEvt");
+	BLEFreeRTOS::Semaphore   m_semaphoreReadDescrEvt    = BLEFreeRTOS::Semaphore("ReadDescrEvt");
 
 };
 
