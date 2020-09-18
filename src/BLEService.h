@@ -50,10 +50,14 @@ public:
 	BLEServer*         getServer();
 	uint8_t            getgiff();
 	void               executeCreate(BLEServer* pServer);
+	void			   executeDelete(uint8_t m_giff);
 	BLECharacteristic* createCharacteristic(BLEUUID uuid, uint32_t properties);
 	BLECharacteristic* createCharacteristic(const char* uuid, uint32_t properties);
+	BLECharacteristic* getCharacteristic(const char* uuid);
+	BLECharacteristic* getCharacteristic(BLEUUID uuid);
 	void               start();
-	std::string toString();
+	void			   stop();
+	std::string        toString();
 	uint8_t			   m_instId = 0;
 
 private:

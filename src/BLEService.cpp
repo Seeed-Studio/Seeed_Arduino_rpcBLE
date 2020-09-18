@@ -25,7 +25,6 @@ BLEService::BLEService(BLEUUID uuid, uint16_t numHandles) {
 	m_uuid      = uuid;
 	m_handle    = NULL_HANDLE;
 	m_pServer   = nullptr;
-	//m_serializeMutex.setName("BLEService");
 	m_lastCreatedCharacteristic = nullptr;
 	m_numHandles = numHandles;
 } // BLEService
@@ -43,8 +42,6 @@ void BLEService::executeCreate(BLEServer* pServer) {
 	RPC_DEBUG("Service executeCreate");
     ble_service_t srcv;
 	srcv.uuid_length = getUUID().getNative()->len;
-	RPC_DEBUG("srcv.uuid_length:%d\n\r",srcv.uuid_length);
-	//memcpy(&(srcv.uuid), &(uuid), srcv.uuid_length);
 	memcpy(&(srcv.uuid), &(getUUID().getNative()->uuid), srcv.uuid_length);
 	srcv.is_primary = true;
     uint8_t srcv_app_id = ble_create_service(srcv);
@@ -52,7 +49,15 @@ void BLEService::executeCreate(BLEServer* pServer) {
 	m_giff = srcv_app_id;
 } // executeCreate
 
+/**
+ * @brief Delete the service.
+ * Delete the service.
+ * @return N/A.
+ */
 
+void BLEService::executeDelete(uint8_t m_giff) {
+     ble_delete_service(m_giff);
+} // executeDelete
 
 /**
  * @brief Create a new BLE Characteristic associated with this service.
@@ -76,6 +81,13 @@ BLECharacteristic* BLEService::createCharacteristic(BLEUUID uuid, uint32_t prope
 	return pCharacteristic;
 } // createCharacteristic
 
+BLECharacteristic* BLEService::getCharacteristic(const char* uuid) {
+	return getCharacteristic(BLEUUID(uuid));
+}
+
+BLECharacteristic* BLEService::getCharacteristic(BLEUUID uuid) {
+	return m_characteristicMap.getByUUID(uuid);
+}
 
 /**
  * @brief Add a characteristic to the service.
@@ -165,16 +177,22 @@ void BLEService::start() {
 	T_SERVER_ID handle = ble_service_start(getgiff());
 	m_handle = handle;
 	RPC_DEBUG("ble_service_start: %d", handle);
-
-//	m_semaphoreStartEvt.wait("start");
 } // start
 
+/**
+ * @brief Stop the service.
+ */
+void BLEService::stop() {
+// We ask the BLE runtime to start the service and then create each of the characteristics.
+// We start the service through its local handle which was returned in the ESP_GATTS_CREATE_EVT event
+// obtained as a result of calling esp_ble_gatts_create_service().
+	
+} // stop
 
 /**
  * @brief Handle a GATTS server event.
  */
 void BLEService::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
-
 	RPC_DEBUG("into BLEService :: handleGATTServerEvent\n\r");
 	// Invoke the GATTS handler in each of the associated characteristics.
 	m_characteristicMap.handleGATTServerEvent(service_id,p_data);
