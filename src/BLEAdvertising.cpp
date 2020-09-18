@@ -33,7 +33,6 @@ BLEAdvertising::BLEAdvertising() {
 
 T_APP_RESULT BLEAdvertising::handleGAPEvent(uint8_t cb_type, void *p_cb_data) {
 	T_APP_RESULT result = APP_RESULT_SUCCESS;
-    T_LE_CB_DATA *p_data = (T_LE_CB_DATA *)p_cb_data;
 	switch (cb_type) {
 		case GAP_MSG_LE_ADV_UPDATE_PARAM: {
 			break;
@@ -122,12 +121,65 @@ void BLEAdvertising::setScanResponse(bool set) {
 }
 
 void BLEAdvertising::setMinPreferred(uint16_t mininterval) {
-//	m_advData.min_interval = mininterval;
     if ((mininterval >= 20) && (mininterval <= 10240)) {
         _advIntMin = (mininterval*1000/625);
     }
 } //
 
+void BLEAdvertising::setMaxPreferred(uint16_t maxinterval) {
+	if ((maxinterval >= 20) && (maxinterval <= 10240)) {
+        _advIntMax = (maxinterval*1000/625);
+    }
+} // 
+
+void BLEAdvertising::setAppearance(uint16_t appearance) {
+	m_appearance = appearance;
+} // setAppearance
+
+void BLEAdvertising::setMaxInterval(uint16_t maxinterval) {
+
+} // setMaxInterval
+
+void BLEAdvertising::setMinInterval(uint16_t mininterval) {
+
+} // setMinInterval
+
+/**
+ * @brief Set the filtering for the scan filter.
+ * @param [in] scanRequestWhitelistOnly If true, only allow scan requests from those on the white list.
+ * @param [in] connectWhitelistOnly If true, only allow connections from those on the white list.
+ */
+void BLEAdvertising::setScanFilter(bool scanRequestWhitelistOnly, bool connectWhitelistOnly) {
+	if (!scanRequestWhitelistOnly && !connectWhitelistOnly) {
+		_advFilterPolicy = GAP_ADV_FILTER_ANY;
+		return;
+	}
+	if (scanRequestWhitelistOnly && !connectWhitelistOnly) {
+		_advFilterPolicy = GAP_ADV_FILTER_WHITE_LIST_SCAN;
+		return;
+	}
+	if (!scanRequestWhitelistOnly && connectWhitelistOnly) {
+		_advFilterPolicy = GAP_ADV_FILTER_WHITE_LIST_CONN;
+		return;
+	}
+	if (scanRequestWhitelistOnly && connectWhitelistOnly) {
+		_advFilterPolicy = GAP_ADV_FILTER_WHITE_LIST_ALL;
+		return;
+	}
+} // setScanFilter
+
+/**
+ * @brief Set BLE address.
+ * @param [in] Bluetooth address.
+ * @param [in] Bluetooth address type.
+ * Set BLE address.
+ */
+
+void BLEAdvertising::setDeviceAddress(uint8_t* addr, T_GAP_REMOTE_ADDR_TYPE type)
+{
+	_advDirectType = type;
+	memcpy(_advDirectAddr,addr,6);
+} // setPrivateAddress
 
 /**
  * @brief Set the advertisement data that is to be published in a regular advertisement.

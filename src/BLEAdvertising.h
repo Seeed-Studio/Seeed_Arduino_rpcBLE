@@ -55,17 +55,21 @@ public:
 	BLEAdvertising();
 	void start();
     void stop();
+    void setAppearance(uint16_t appearance);
     void addServiceUUID(const char* serviceUUID);
 	uint8_t addServiceUUID(BLEUUID serviceUUID);
 	void setScanResponse(bool);
     void setMinPreferred(uint16_t);
+    void setMaxPreferred(uint16_t);
+    void setMaxInterval(uint16_t maxinterval);
+    void setMinInterval(uint16_t mininterval);
+    void setScanFilter(bool scanRequertWhitelistOnly, bool connectWhitelistOnly);
+    void setDeviceAddress(uint8_t* addr, T_GAP_REMOTE_ADDR_TYPE type);   
     uint8_t addCompleteName(const char* str);
     uint8_t addShortName(const char* str);
     uint8_t addFlags(uint8_t flags);
     void setAdvData();
-
     void addData(const uint8_t* data, uint8_t size,ble_adv_data_type type);
-
     void setAdvertisementData(BLEAdvertisementData& advertisementData);
     void setScanResponseData(BLEAdvertisementData& advertisementData);
     void setAdvertisementType(uint8_t adv_type);
@@ -80,6 +84,7 @@ private:
     uint8_t scan_data[31] ={0};     // array for storing formatted advertising data for receiving and sending
     uint8_t scan_dataSize = 0;
     String      _devName;
+    int         m_appearance;
 
     uint8_t     _serviceCount = 0;
     BLEUUID     _serviceList[7];
