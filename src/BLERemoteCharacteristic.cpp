@@ -26,6 +26,13 @@ BLERemoteCharacteristic::BLERemoteCharacteristic(
 } // BLERemoteCharacteristic
 
 /**
+ *@brief Destructor.
+ */
+BLERemoteCharacteristic::~BLERemoteCharacteristic() {
+	removeDescriptors();   // Release resources for any descriptor information we may have allocated.
+} // ~BLERemoteCharacteristic
+
+/**
  * @brief Get the UUID for this characteristic.
  * @return The UUID for this characteristic.
  */
@@ -81,6 +88,29 @@ bool BLERemoteCharacteristic::canWrite() {
 	return (m_charProp & GATT_CHAR_PROP_WRITE) != 0;
 } // canWrite
 
+/**
+ * @brief Does the characteristic support broadcasting?
+ * @return True if the characteristic supports broadcasting.
+ */
+bool BLERemoteCharacteristic::canBroadcast() {
+	return (m_charProp & GATT_CHAR_PROP_BROADCAST) != 0;
+} // canBroadcast
+
+/**
+ * @brief Does the characteristic support indications?
+ * @return True if the characteristic supports indications.
+ */
+bool BLERemoteCharacteristic::canIndicate() {
+	return (m_charProp & GATT_CHAR_PROP_INDICATE) != 0;
+} // canIndicate
+
+/**
+ * @brief Does the characteristic support writing with no response?
+ * @return True if the characteristic supports writing with no response.
+ */
+bool BLERemoteCharacteristic::canWriteNoResponse() {
+	return (m_charProp & GATT_CHAR_PROP_WRITE_NO_RSP) != 0;
+} // canWriteNoResponse
 
 /**
  * @brief Read the value of the remote characteristic.
@@ -100,7 +130,61 @@ std::string BLERemoteCharacteristic::readValue() {
 	return m_value;
 } // readValue
 
+/**
+ * @brief Read a byte value
+ * @return The value as a byte
+ */
+uint8_t BLERemoteCharacteristic::readUInt8() {
+	std::string value = readValue();
+	if (value.length() >= 1) {
+		return (uint8_t)value[0];
+	}
+	return 0;
+} // readUInt8
 
+/**
+ * @brief Read an unsigned 16 bit value
+ * @return The unsigned 16 bit value.
+ */
+uint16_t BLERemoteCharacteristic::readUInt16() {
+	std::string value = readValue();
+	if (value.length() >= 2) {
+		return *(uint16_t*)(value.data());
+	}
+	return 0;
+} // readUInt16
+
+/**
+ * @brief Read an unsigned 32 bit value.
+ * @return the unsigned 32 bit value.
+ */
+uint32_t BLERemoteCharacteristic::readUInt32() {
+	std::string value = readValue();
+	if (value.length() >= 4) {
+		return *(uint32_t*)(value.data());
+	}
+	return 0;
+} // readUInt32
+
+/**
+ * @brief Read a float value.
+ * @return the float value.
+ */
+float BLERemoteCharacteristic::readFloat() {
+	std::string value = readValue();
+	if (value.length() >= 4) {
+		return *(float*)(value.data());
+	}
+	return 0.0;
+} // readFloat
+
+/**
+ * @brief Read raw data from remote characteristic as hex bytes
+ * @return return pointer data read
+ */
+uint8_t* BLERemoteCharacteristic::readRawData() {
+	return m_rawData;
+}
 
 /**
  * @brief Register for notifications.
@@ -143,6 +227,13 @@ BLERemoteDescriptor* BLERemoteCharacteristic::getDescriptor(BLEUUID uuid) {
 	}
 	return nullptr;
 } // getDescriptor
+
+/**
+ * @brief Retrieve the map of descriptors keyed by UUID.
+ */
+std::map<std::string, BLERemoteDescriptor*>* BLERemoteCharacteristic::getDescriptors() {
+	return &m_descriptorMap;
+} // getDescriptors
 
 void BLERemoteCharacteristic::writeValue(uint8_t newValue, bool response) {
 	writeValue(&newValue, 1, response);

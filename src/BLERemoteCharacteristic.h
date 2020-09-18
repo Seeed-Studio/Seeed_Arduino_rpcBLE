@@ -18,23 +18,28 @@ typedef void (*notify_callback)(BLERemoteCharacteristic* pBLERemoteCharacteristi
  */
 class BLERemoteCharacteristic {
 public:
+    ~BLERemoteCharacteristic();
 	BLEUUID     getUUID();
     uint16_t    getHandle();
-	uint16_t     getendHandle();
-	
+	uint16_t    getendHandle();
+	bool        canBroadcast();
 	bool        canRead();
 	bool        canNotify();
 	bool        canWrite();
-	
+	bool        canIndicate();
+	bool        canWriteNoResponse();
 	std::string readValue();
-	
+	uint8_t     readUInt8();
+	uint16_t    readUInt16();
+	uint32_t    readUInt32();
+	float       readFloat();
 	void        writeValue(uint8_t* data, size_t length, bool response = false);
 	void        writeValue(std::string newValue, bool response = false);
 	void        writeValue(uint8_t newValue, bool response = false);
-	
 	BLERemoteDescriptor* getDescriptor(BLEUUID uuid);
+	std::map<std::string, BLERemoteDescriptor*>* getDescriptors();
 	void        registerForNotify(notify_callback _callback, bool notifications = true);
-	
+	uint8_t*	readRawData();
 	std::string toString();
 	
 private:
