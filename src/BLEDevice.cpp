@@ -17,7 +17,7 @@ BLEServer *BLEDevice::m_pServer = nullptr;
 BLEAdvertising *BLEDevice::m_bleAdvertising = nullptr;
 std::string BLEDevice::ble_name = "";
 T_CLIENT_ID BLEClient::m_gattc_if = 0;
-
+uint16_t   BLEDevice::m_localMTU = 23;  // not sure if this variable is useful
 std::map<uint16_t, conn_status_t> BLEDevice::m_connectedClientsMap;
 void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uint16_t disc_cause);
 void ble_dev_state_evt_handler(T_GAP_DEV_STATE new_state, uint16_t cause);
@@ -89,6 +89,98 @@ void BLEDevice::startAdvertising()
     getAdvertising()->start();
 } // startAdvertising
 
+void BLEDevice::stopAdvertising() {
+    getAdvertising()->stop();
+} // stopAdvertising
+/**
+ * @brief Get the BLE device address.
+ * @return The BLE device address.
+ */
+/* STATIC*/ BLEAddress BLEDevice::getAddress() {
+	uint8_t bt_addr[6];
+    gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
+	return BLEAddress(bt_addr);
+} // getAddress
+
+/**
+ * @brief Get the value of a characteristic of a service on a remote device.
+ * @param [in] bdAddress
+ * @param [in] serviceUUID
+ * @param [in] characteristicUUID
+ */
+/* STATIC */ std::string BLEDevice::getValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID) {
+	BLEClient* pClient = createClient();
+	pClient->connect(bdAddress);
+	std::string ret = pClient->getValue(serviceUUID, characteristicUUID);
+	pClient->disconnect();
+	return ret;
+} // getValue
+
+/**
+ * @brief Set the value of a characteristic of a service on a remote device.
+ * @param [in] bdAddress
+ * @param [in] serviceUUID
+ * @param [in] characteristicUUID
+ */
+/* STATIC */ void BLEDevice::setValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID, std::string value) {
+	BLEClient* pClient = createClient();
+	pClient->connect(bdAddress);
+	pClient->setValue(serviceUUID, characteristicUUID, value);
+	pClient->disconnect();
+} // setValue
+
+/**
+ * @brief Return a string representation of the nature of this device.
+ * @return A string representation of the nature of this device.
+ */
+/* STATIC */ std::string BLEDevice::toString() {
+	std::string res = "BD Address: " + getAddress().toString();
+	return res;
+} // toString
+
+/**
+ * @brief Add an entry to the BLE white list.
+ * @param [in] address The address to add to the white list.
+ */
+void BLEDevice::whiteListAdd(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,
+                                 T_GAP_REMOTE_ADDR_TYPE bd_type) {
+    operation = GAP_WHITE_LIST_OP_ADD;
+	le_modify_white_list(operation, bd_addr, bd_type);
+} // whiteListAdd
+
+/**
+ * @brief Remove an entry from the BLE white list.
+ * @param [in] address The address to remove from the white list.
+ */
+void BLEDevice::whiteListRemove(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,
+                                 T_GAP_REMOTE_ADDR_TYPE bd_type) {
+	operation = GAP_WHITE_LIST_OP_REMOVE;
+    le_modify_white_list(operation, bd_addr, bd_type);
+} // whiteListRemove
+
+/*
+ * @brief Setup local mtu that will be used to negotiate mtu during request from client peer
+ * @param [in] mtu Value to set local mtu, should be larger than 23 and lower or equal to 517
+ */
+void BLEDevice::setMTU(uint16_t mtu) {
+	gap_config_max_mtu_size(mtu);
+    m_localMTU = mtu;
+}
+
+uint16_t BLEDevice::getMTU() {
+	return m_localMTU;
+}
+
+bool BLEDevice::getInitialized() {
+	return initialized;
+}
+
+BLEClient* BLEDevice::getClientByGattIf(uint16_t conn_id) {
+	return (BLEClient*)m_connectedClientsMap.find(conn_id)->second.peer_device;
+}
+
+
+
 /**
  * @brief Initialize the %BLE environment.
  * @param deviceName The device name of the device.
@@ -123,6 +215,15 @@ void BLEDevice::startAdvertising()
     RPC_DEBUG("BLE init success\n\r");
     return;
 } // init
+
+/**
+ * @brief de-Initialize the %BLE environment.
+ * @param release_memory release the internal BT stack memory
+ */
+/* STATIC */ void BLEDevice::deinit() {
+    if (!initialized) return;
+    ble_deinit();
+}
 
 /**
  * @brief Handle GAP events.
@@ -374,6 +475,7 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
         if (BLEDevice::getServer() != nullptr)
         {
             BLEDevice::getServer()->addPeerDevice((void *)BLEDevice::getServer(), false, conn_id);
+            BLEDevice::getServer()->setConnectedCount();
             if (BLEDevice::getServer()->getCallbacks() != nullptr)
             {
                 BLEDevice::getServer()->getCallbacks()->onConnect(BLEDevice::getServer());
@@ -506,10 +608,10 @@ void ble_param_update_evt_handler(uint8_t conn_id, uint8_t status, uint16_t caus
  */
 void ble_mtu_info_evt_handler(uint8_t conn_id, uint16_t mtu_size)
 {
-    // if(client->conn_id = conn_id)
-    // {
-    //     client->mtu_size = mtu_size;
-    // }
+    if(BLEDevice::getClient()->getConnId() == conn_id)
+    {
+        BLEDevice::getClient()->setMTU(mtu_size);
+    }
     RPC_DEBUG("app_handle_conn_mtu_info_evt: conn_id %d, mtu_size %d\n\r", conn_id, mtu_size);
 }
 
