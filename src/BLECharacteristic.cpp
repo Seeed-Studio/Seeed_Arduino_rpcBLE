@@ -22,6 +22,14 @@ static BLECharacteristicCallbacks defaultCallback; //null-object-pattern
 
 /**
  * @brief Construct a characteristic
+ * @param [in] uuid - UUID (const char*) for the characteristic.
+ * @param [in] properties - Properties for the characteristic.
+ */
+BLECharacteristic::BLECharacteristic(const char* uuid, uint32_t properties) : BLECharacteristic(BLEUUID(uuid), properties) {
+}
+
+/**
+ * @brief Construct a characteristic
  * @param [in] uuid - UUID for the characteristic.
  * @param [in] properties - Properties for the characteristic.
  */
@@ -39,6 +47,13 @@ BLECharacteristic::BLECharacteristic(BLEUUID uuid, uint32_t properties) {
 	setIndicateProperty((properties & PROPERTY_INDICATE) != 0);
 	setWriteNoResponseProperty((properties & PROPERTY_WRITE_NR) != 0);
 } // BLECharacteristic
+
+/**
+ * @brief Destructor.
+ */
+BLECharacteristic::~BLECharacteristic() {
+	//free(m_attr_value); // Release the storage for the value.
+} // ~BLECharacteristic
 
 
 /**
@@ -72,6 +87,14 @@ void BLECharacteristic::addDescriptor(BLEDescriptor* pDescriptor) {
 	m_descriptorMap.setByUUID(pDescriptor->getUUID(), pDescriptor);
 } // addDescriptor
 
+/**
+ * @brief Return the BLE Descriptor for the given UUID if associated with this characteristic.
+ * @param [in] descriptorUUID The UUID of the descriptor that we wish to retrieve.
+ * @return The BLE Descriptor.  If no such descriptor is associated with the characteristic, nullptr is returned.
+ */
+BLEDescriptor* BLECharacteristic::getDescriptorByUUID(const char* descriptorUUID) {
+	return m_descriptorMap.getByUUID(BLEUUID(descriptorUUID));
+} // getDescriptorByUUID
 
 BLEDescriptor* BLECharacteristic::getDescriptorByUUID(BLEUUID descriptorUUID) {
 	return m_descriptorMap.getByUUID(descriptorUUID);
@@ -86,13 +109,11 @@ BLEDescriptor* BLECharacteristic::getDescriptorByUUID(BLEUUID descriptorUUID) {
  * @return N/A 
  */
 void BLECharacteristic::setBroadcastProperty(bool value) {
-#if 1	
 	if (value) {
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_BROADCAST);
 	} else {
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_BROADCAST);
 	}
-#endif 
 } // setBroadcastProperty
 
 
@@ -101,13 +122,11 @@ void BLECharacteristic::setBroadcastProperty(bool value) {
  * @param [in] value Set to true if we are to allow reads.
  */
 void BLECharacteristic::setReadProperty(bool value) {
-#if 1
 	if (value) {
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_READ);
 	} else {
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_READ);
 	}
-#endif 
 } // setReadProperty
 
 
@@ -116,13 +135,11 @@ void BLECharacteristic::setReadProperty(bool value) {
  * @param [in] value Set to true if we are to allow writes.
  */
 void BLECharacteristic::setWriteProperty(bool value) {
-#if 1
 	if (value) {
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_WRITE);
 	} else {
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_WRITE);
 	}
-#endif
 } // setWriteProperty
 
 
@@ -131,13 +148,11 @@ void BLECharacteristic::setWriteProperty(bool value) {
  * @param [in] value Set to true if we are to allow notification messages.
  */
 void BLECharacteristic::setNotifyProperty(bool value) {
-#if 1
 	if (value) {
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_NOTIFY);
 	} else {
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_NOTIFY);
 	}
-#endif
 } // setNotifyProperty
 
 
@@ -146,13 +161,11 @@ void BLECharacteristic::setNotifyProperty(bool value) {
  * @param [in] value Set to true if we are to allow indicate messages.
  */
 void BLECharacteristic::setIndicateProperty(bool value) {
-#if 1
 	if (value) {
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_INDICATE);
 	} else {
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_INDICATE);
 	}
-#endif
 } // setIndicateProperty
 
 
@@ -161,19 +174,72 @@ void BLECharacteristic::setIndicateProperty(bool value) {
  * @param [in] value Set to true if we are to allow writes with no response.
  */
 void BLECharacteristic::setWriteNoResponseProperty(bool value) {
-#if 1
 	if (value) {
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_WRITE_NO_RSP);
 	} else {
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_WRITE_NO_RSP);
 	}
-#endif
 } // setWriteNoResponseProperty
 
 
 void BLECharacteristic::setAccessPermissions(uint32_t perm) {
 	m_permissions = perm;
 }
+
+/**
+ * @brief Return a string representation of the characteristic.
+ * @return A string representation of the characteristic.
+ */
+std::string BLECharacteristic::toString() {
+	std::string res = "UUID: " + m_bleUUID.toString() + ", handle : 0x";
+	char hex[5];
+	snprintf(hex, sizeof(hex), "%04x", m_handle);
+	res += hex;
+	res += " ";
+	if (m_properties & GATT_CHAR_PROP_READ) res += "Read ";
+	if (m_properties & GATT_CHAR_PROP_WRITE) res += "Write ";
+	if (m_properties & GATT_CHAR_PROP_WRITE_NO_RSP) res += "WriteNoResponse ";
+	if (m_properties & GATT_CHAR_PROP_BROADCAST) res += "Broadcast ";
+	if (m_properties & GATT_CHAR_PROP_NOTIFY) res += "Notify ";
+	if (m_properties & GATT_CHAR_PROP_INDICATE) res += "Indicate ";
+	return res;
+} // toString
+
+
+void BLECharacteristic::setValue(double& data64) {
+	double temp = data64;
+	setValue((uint8_t*)&temp, 8);
+} // setValue
+
+void BLECharacteristic::setValue(float& data32) {
+	float temp = data32;
+	setValue((uint8_t*)&temp, 4);
+} // setValue
+
+void BLECharacteristic::setValue(int& data32) {
+	uint8_t temp[4];
+	temp[0] = data32;
+	temp[1] = data32 >> 8;
+	temp[2] = data32 >> 16;
+	temp[3] = data32 >> 24;
+	setValue(temp, 4);
+} // setValue
+
+void BLECharacteristic::setValue(uint16_t& data16) {
+	uint8_t temp[2];
+	temp[0] = data16;
+	temp[1] = data16 >> 8;
+	setValue(temp, 2);
+} // setValue
+
+void BLECharacteristic::setValue(uint32_t& data32) {
+	uint8_t temp[4];
+	temp[0] = data32;
+	temp[1] = data32 >> 8;
+	temp[2] = data32 >> 16;
+	temp[3] = data32 >> 24;
+	setValue(temp, 4);
+} // setValue
 
 /**
  * @brief Set the value of the characteristic from string data.
@@ -222,6 +288,13 @@ BLEUUID BLECharacteristic::getUUID() {
 	return m_bleUUID;
 } // getUUID
 
+/**
+ * @brief Retrieve the current raw data of the characteristic.
+ * @return A pointer to storage containing the current characteristic data.
+ */
+uint8_t* BLECharacteristic::getData() {
+	return m_value.getData();
+} // getData
 
 uint8_t BLECharacteristic::getProperties() {
 	return m_properties;
@@ -248,6 +321,15 @@ std::string BLECharacteristic::getValue() {
 	return m_value.getValue();
 } // getValue
 
+/**
+ * @brief Send an indication.
+ * An indication is a transmission of up to the first 20 bytes of the characteristic value.  An indication
+ * will block waiting a positive confirmation from the client.
+ * @return N/A
+ */
+void BLECharacteristic::indicate() {
+	notify(false);
+} // indicate
 
 /**
  * @brief Send a notify.
@@ -256,8 +338,6 @@ std::string BLECharacteristic::getValue() {
  * @return N/A.
  */
 void BLECharacteristic::notify(bool is_notification) {
-//	assert(getService() != nullptr);
-//	assert(getService()->getServer() != nullptr);
     if(isNotify == true){
 	m_pCallbacks->onNotify(this);   // Invoke the notify callback.
 

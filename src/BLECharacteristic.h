@@ -24,8 +24,10 @@ class BLECharacteristicCallbacks;
  */
 class BLEDescriptorMap {
 public:
+    void setByUUID(const char* uuid, BLEDescriptor* pDescriptor);
     void setByUUID(BLEUUID uuid, BLEDescriptor* pDescriptor);
 	void setByHandle(uint16_t handle, BLEDescriptor* pDescriptor);
+	BLEDescriptor* getByUUID(const char* uuid);
 	BLEDescriptor* getByUUID(BLEUUID uuid);
 	BLEDescriptor* getFirst();
 	BLEDescriptor* getNext();
@@ -48,31 +50,38 @@ private:
  */
 class BLECharacteristic {
 public:
+    BLECharacteristic(const char* uuid, uint32_t properties = 0);
     BLECharacteristic(BLEUUID uuid, uint32_t properties = 0);
+	virtual ~BLECharacteristic();
 	void setBroadcastProperty(bool value);
 	void setReadProperty(bool value);
 	void setWriteProperty(bool value);
 	void setNotifyProperty(bool value);
 	void setIndicateProperty(bool value);
 	void setWriteNoResponseProperty(bool value);
-
+	void setValue(double& data64);
+	void setValue(float& data32);
+	void setValue(int& data32);
+	void setValue(uint32_t& data32);
+	void setValue(uint16_t& data16);
 	void setValue(std::string value);
 	void setValue(uint8_t* data, size_t size);
-
 	void setAccessPermissions(uint32_t perm);
 	void setCallbacks(BLECharacteristicCallbacks* pCallbacks);
-
 	BLEDescriptor* createDescriptor(BLEUUID uuid,uint16_t flags,uint32_t permissions,uint16_t max_len);
 	BLEDescriptor* createDescriptor(const char* uuid, uint16_t flags,uint32_t permissions,uint16_t max_len);
 	void           addDescriptor(BLEDescriptor* pDescriptor);
+	BLEDescriptor* getDescriptorByUUID(const char* descriptorUUID);
 	BLEDescriptor* getDescriptorByUUID(BLEUUID descriptorUUID);
-	
 	BLEService*    getService();
 	std::string    getValue();
+	void indicate();
 	void notify(bool is_notification = true);
-
 	BLEUUID        getUUID();
-
+	uint8_t*       getData();
+	uint8_t        getHandle();
+	uint32_t       getAccessPermissions();
+	std::string toString();
 	static const uint32_t PROPERTY_READ      = 1<<0;
 	static const uint32_t PROPERTY_WRITE     = 1<<1;
 	static const uint32_t PROPERTY_NOTIFY    = 1<<2;
@@ -98,8 +107,6 @@ private:
 
     void                 executeCreate(BLEService* pService);
 	uint8_t              getProperties();
-	uint32_t             getAccessPermissions();
-	uint8_t             getHandle();
 	void handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 	BLEFreeRTOS::Semaphore m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
 	BLEFreeRTOS::Semaphore m_semaphoreSetValue  = BLEFreeRTOS::Semaphore("SetValue");
