@@ -43,6 +43,14 @@ BLEService* BLEServiceMap::getFirst() {
 	return pRet;
 } // getFirst
 
+/**
+ * @brief Return the service by UUID.
+ * @param [in] UUID The UUID to look up the service.
+ * @return The characteristic.
+ */
+BLEService* BLEServiceMap::getByUUID(const char* uuid) {
+	return getByUUID(BLEUUID(uuid));
+}
 
 /**
  * @brief Get the next service in the map.
@@ -56,15 +64,6 @@ BLEService* BLEServiceMap::getNext() {
 } // getNext
 
 
-/**
- * @brief Set the service by UUID.
- * @param [in] uuid The uuid of the service.
- * @param [in] characteristic The service to cache.
- * @return N/A.
- */
-void BLEServiceMap::setByUUID(BLEUUID uuid, BLEService* service) {
-	m_uuidMap.insert(std::pair<BLEService*, std::string>(service, uuid.toString()));
-} // setByUUID
 
 
 /**
@@ -77,7 +76,15 @@ void BLEServiceMap::setByHandle(uint16_t handle, BLEService* service) {
 	m_handleMap.insert(std::pair<uint16_t, BLEService*>(handle, service));
 } // setByHandle
 
-
+/**
+ * @brief Set the service by UUID.
+ * @param [in] uuid The uuid of the service.
+ * @param [in] characteristic The service to cache.
+ * @return N/A.
+ */
+void BLEServiceMap::setByUUID(BLEUUID uuid, BLEService* service) {
+	m_uuidMap.insert(std::pair<BLEService*, std::string>(service, uuid.toString()));
+} // setByUUID
 
 /**
  * @brief Return a string representation of the service map.
@@ -95,6 +102,22 @@ std::string BLEServiceMap::toString() {
 	return res;
 } // toString
 
+/**
+ * @brief Removes service from maps.
+ * @return N/A.
+ */
+void BLEServiceMap::removeService(BLEService* service) {
+	m_handleMap.erase(service->getHandle());
+	m_uuidMap.erase(service);
+} // removeService
+
+/**
+ * @brief Returns the amount of registered services
+ * @return amount of registered services
+ */
+int BLEServiceMap::getRegisteredServiceCount(){
+	return m_handleMap.size();
+}
 
 void BLEServiceMap::handleGATTServerEvent(T_SERVER_ID service_id, void *p_datas) {
 	// Invoke the handler for every Service we have.
