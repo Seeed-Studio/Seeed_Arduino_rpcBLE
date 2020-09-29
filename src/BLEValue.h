@@ -31,7 +31,8 @@ public:
 private:
 	std::string m_accumulation;
 	uint16_t    m_readOffset;
-	std::string m_value;
+	uint8_t     *m_value;
+	size_t 	m_length;
 
 };
 
