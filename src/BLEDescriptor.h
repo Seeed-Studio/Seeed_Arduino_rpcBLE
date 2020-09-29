@@ -12,6 +12,7 @@
 #include "BLEUUID.h"
 #include "BLECharacteristic.h"
 #include "BLEFreeRTOS.h"
+#include "BLEValue.h"
 #include "Seeed_erpcUnified.h"
 
 typedef uint8_t T_SERVER_ID;
@@ -36,12 +37,14 @@ public:
 	uint8_t* getValue();
 	uint16_t getmaxlen();
 	uint32_t getpermissions();
+	BLECharacteristic* getCharacteristic();
 	void  handleGATTServerEvent(T_SERVER_ID service_id, void *p_data);
 	std::string toString();                                 // Convert the descriptor to a string representation.
 private:
 	friend class BLEDescriptorMap;
 	friend class BLECharacteristic;
 
+    BLEValue                m_value;
     BLEUUID                 m_bleUUID;
 	uint8_t                 m_handle;
 	uint16_t                m_attr_len;
@@ -51,10 +54,11 @@ private:
 	BLEDescriptorCallbacks* m_pCallback;
 
     uint16_t                m_flags;
-	uint32_t                m_permissions;
+	uint32_t                m_permissions = 0;
 
     
 	BLEFreeRTOS::Semaphore     m_semaphoreCreateEvt = BLEFreeRTOS::Semaphore("CreateEvt");
+	BLEFreeRTOS::Semaphore     m_semaphoreSetValue  = BLEFreeRTOS::Semaphore("SetValue");
 
 	void executeCreate(BLECharacteristic* pCharacteristic);
 
