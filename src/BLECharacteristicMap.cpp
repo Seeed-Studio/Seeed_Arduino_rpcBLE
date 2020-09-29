@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include "BLEService.h"
+#include "Arduino.h"
 
 
 /**
