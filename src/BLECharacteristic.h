@@ -13,7 +13,7 @@
 #include "BLEDescriptor.h"
 #include "BLEValue.h"
 #include "BLEFreeRTOS.h"
-typedef uint8_t T_SERVER_ID;
+#include "Seeed_erpcUnified.h"
 
 class BLEService;
 class BLEDescriptor;
@@ -82,12 +82,14 @@ public:
 	uint8_t        getHandle();
 	uint32_t       getAccessPermissions();
 	std::string toString();
-	static const uint32_t PROPERTY_READ      = 1<<0;
-	static const uint32_t PROPERTY_WRITE     = 1<<1;
-	static const uint32_t PROPERTY_NOTIFY    = 1<<2;
-	static const uint32_t PROPERTY_BROADCAST = 1<<3;
-	static const uint32_t PROPERTY_INDICATE  = 1<<4;
-	static const uint32_t PROPERTY_WRITE_NR  = 1<<5;
+	static const uint32_t PROPERTY_READ      = GATT_CHAR_PROP_READ;
+	static const uint32_t PROPERTY_WRITE     = GATT_CHAR_PROP_WRITE;
+	static const uint32_t PROPERTY_NOTIFY    = GATT_CHAR_PROP_NOTIFY;
+	static const uint32_t PROPERTY_BROADCAST = GATT_CHAR_PROP_BROADCAST;
+	static const uint32_t PROPERTY_INDICATE  = GATT_CHAR_PROP_INDICATE;
+	static const uint32_t PROPERTY_WRITE_NR  = GATT_CHAR_PROP_WRITE_NO_RSP;
+
+	static const uint32_t indicationTimeout = 1000;
 
 private:
     friend class BLEServer;
@@ -100,6 +102,7 @@ private:
     uint8_t                     m_properties;
 	uint32_t                    m_permissions;
     BLECharacteristicCallbacks* m_pCallbacks;
+
 
 	BLEValue                    m_value;
 	BLEService*                 m_pService;

@@ -16,7 +16,6 @@
 #include "rpc_unified_log.h"
 
 #define NULL_HANDLE (0xffff)
-bool isNotify = false;
 
 static BLECharacteristicCallbacks defaultCallback; //null-object-pattern
 
@@ -25,7 +24,8 @@ static BLECharacteristicCallbacks defaultCallback; //null-object-pattern
  * @param [in] uuid - UUID (const char*) for the characteristic.
  * @param [in] properties - Properties for the characteristic.
  */
-BLECharacteristic::BLECharacteristic(const char* uuid, uint32_t properties) : BLECharacteristic(BLEUUID(uuid), properties) {
+BLECharacteristic::BLECharacteristic(const char *uuid, uint32_t properties) : BLECharacteristic(BLEUUID(uuid), properties)
+{
 }
 
 /**
@@ -33,12 +33,26 @@ BLECharacteristic::BLECharacteristic(const char* uuid, uint32_t properties) : BL
  * @param [in] uuid - UUID for the characteristic.
  * @param [in] properties - Properties for the characteristic.
  */
-BLECharacteristic::BLECharacteristic(BLEUUID uuid, uint32_t properties) {
-	m_bleUUID    = uuid;
-	m_handle     = NULL_HANDLE;
+BLECharacteristic::BLECharacteristic(BLEUUID uuid, uint32_t properties)
+{
+	m_bleUUID = uuid;
+	m_handle = NULL_HANDLE;
 	m_properties = (uint8_t)0;
 	m_pCallbacks = &defaultCallback;
-	m_permissions = GATT_PERM_ALL;
+	m_permissions = 0;
+
+	if (properties & PROPERTY_READ)
+	{
+		m_permissions |= GATT_PERM_READ;
+	}
+	if ((properties & PROPERTY_WRITE) || (properties & PROPERTY_WRITE_NR))
+	{
+		m_permissions |= GATT_PERM_WRITE;
+	}
+	if ((properties & PROPERTY_NOTIFY) || (properties & PROPERTY_INDICATE))
+	{
+		m_permissions |= GATT_PERM_NOTIF_IND;
+	}
 
 	setBroadcastProperty((properties & PROPERTY_BROADCAST) != 0);
 	setReadProperty((properties & PROPERTY_READ) != 0);
@@ -51,10 +65,10 @@ BLECharacteristic::BLECharacteristic(BLEUUID uuid, uint32_t properties) {
 /**
  * @brief Destructor.
  */
-BLECharacteristic::~BLECharacteristic() {
+BLECharacteristic::~BLECharacteristic()
+{
 	//free(m_attr_value); // Release the storage for the value.
 } // ~BLECharacteristic
-
 
 /**
  * @brief Create a new BLE Characteristic associated with this service.
@@ -62,7 +76,8 @@ BLECharacteristic::~BLECharacteristic() {
  * @param [in] properties - The properties of the characteristic.
  * @return The new BLE characteristic.
  */
-BLEDescriptor* BLECharacteristic::createDescriptor(const char* uuid, uint16_t flags,uint32_t permissions,uint16_t max_len) {
+BLEDescriptor *BLECharacteristic::createDescriptor(const char *uuid, uint16_t flags, uint32_t permissions, uint16_t max_len)
+{
 	return createDescriptor(BLEUUID(uuid), flags, permissions, max_len);
 }
 /**
@@ -71,19 +86,20 @@ BLEDescriptor* BLECharacteristic::createDescriptor(const char* uuid, uint16_t fl
  * @param [in] properties - The properties of the characteristic.
  * @return The new BLE characteristic.
  */
-BLEDescriptor* BLECharacteristic::createDescriptor(BLEUUID uuid,uint16_t flags,uint32_t permissions,uint16_t max_len) {
-	BLEDescriptor* pDescriptor = new BLEDescriptor(uuid,flags,permissions,max_len);
+BLEDescriptor *BLECharacteristic::createDescriptor(BLEUUID uuid, uint16_t flags, uint32_t permissions, uint16_t max_len)
+{
+	BLEDescriptor *pDescriptor = new BLEDescriptor(uuid, flags, permissions, max_len);
 	addDescriptor(pDescriptor);
 	return pDescriptor;
 } // createCharacteristic
-
 
 /**
  * @brief Associate a descriptor with this characteristic.
  * @param [in] pDescriptor
  * @return N/A.
  */
-void BLECharacteristic::addDescriptor(BLEDescriptor* pDescriptor) {
+void BLECharacteristic::addDescriptor(BLEDescriptor *pDescriptor)
+{
 	m_descriptorMap.setByUUID(pDescriptor->getUUID(), pDescriptor);
 } // addDescriptor
 
@@ -92,14 +108,15 @@ void BLECharacteristic::addDescriptor(BLEDescriptor* pDescriptor) {
  * @param [in] descriptorUUID The UUID of the descriptor that we wish to retrieve.
  * @return The BLE Descriptor.  If no such descriptor is associated with the characteristic, nullptr is returned.
  */
-BLEDescriptor* BLECharacteristic::getDescriptorByUUID(const char* descriptorUUID) {
+BLEDescriptor *BLECharacteristic::getDescriptorByUUID(const char *descriptorUUID)
+{
 	return m_descriptorMap.getByUUID(BLEUUID(descriptorUUID));
 } // getDescriptorByUUID
 
-BLEDescriptor* BLECharacteristic::getDescriptorByUUID(BLEUUID descriptorUUID) {
+BLEDescriptor *BLECharacteristic::getDescriptorByUUID(BLEUUID descriptorUUID)
+{
 	return m_descriptorMap.getByUUID(descriptorUUID);
 } // getDescriptorByUUID
-
 
 /**
  * @brief Set the permission to broadcast.
@@ -108,81 +125,100 @@ BLEDescriptor* BLECharacteristic::getDescriptorByUUID(BLEUUID descriptorUUID) {
  * @param [in] value The flag value of the property.
  * @return N/A 
  */
-void BLECharacteristic::setBroadcastProperty(bool value) {
-	if (value) {
+void BLECharacteristic::setBroadcastProperty(bool value)
+{
+	if (value)
+	{
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_BROADCAST);
-	} else {
+	}
+	else
+	{
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_BROADCAST);
 	}
 } // setBroadcastProperty
-
 
 /**
  * @brief Set the Read property value.
  * @param [in] value Set to true if we are to allow reads.
  */
-void BLECharacteristic::setReadProperty(bool value) {
-	if (value) {
+void BLECharacteristic::setReadProperty(bool value)
+{
+	if (value)
+	{
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_READ);
-	} else {
+	}
+	else
+	{
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_READ);
 	}
 } // setReadProperty
-
 
 /**
  * @brief Set the Write property value.
  * @param [in] value Set to true if we are to allow writes.
  */
-void BLECharacteristic::setWriteProperty(bool value) {
-	if (value) {
+void BLECharacteristic::setWriteProperty(bool value)
+{
+	if (value)
+	{
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_WRITE);
-	} else {
+	}
+	else
+	{
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_WRITE);
 	}
 } // setWriteProperty
-
 
 /**
  * @brief Set the Notify property value.
  * @param [in] value Set to true if we are to allow notification messages.
  */
-void BLECharacteristic::setNotifyProperty(bool value) {
-	if (value) {
+void BLECharacteristic::setNotifyProperty(bool value)
+{
+	if (value)
+	{
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_NOTIFY);
-	} else {
+	}
+	else
+	{
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_NOTIFY);
 	}
 } // setNotifyProperty
-
 
 /**
  * @brief Set the Indicate property value.
  * @param [in] value Set to true if we are to allow indicate messages.
  */
-void BLECharacteristic::setIndicateProperty(bool value) {
-	if (value) {
+void BLECharacteristic::setIndicateProperty(bool value)
+{
+	if (value)
+	{
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_INDICATE);
-	} else {
+	}
+	else
+	{
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_INDICATE);
 	}
 } // setIndicateProperty
-
 
 /**
  * @brief Set the Write No Response property value.
  * @param [in] value Set to true if we are to allow writes with no response.
  */
-void BLECharacteristic::setWriteNoResponseProperty(bool value) {
-	if (value) {
+void BLECharacteristic::setWriteNoResponseProperty(bool value)
+{
+	if (value)
+	{
 		m_properties = (uint8_t)(m_properties | GATT_CHAR_PROP_WRITE_NO_RSP);
-	} else {
+	}
+	else
+	{
 		m_properties = (uint8_t)(m_properties & ~GATT_CHAR_PROP_WRITE_NO_RSP);
 	}
 } // setWriteNoResponseProperty
 
-
-void BLECharacteristic::setAccessPermissions(uint32_t perm) {
+void BLECharacteristic::setAccessPermissions(uint32_t perm)
+{
 	m_permissions = perm;
 }
 
@@ -190,33 +226,42 @@ void BLECharacteristic::setAccessPermissions(uint32_t perm) {
  * @brief Return a string representation of the characteristic.
  * @return A string representation of the characteristic.
  */
-std::string BLECharacteristic::toString() {
+std::string BLECharacteristic::toString()
+{
 	std::string res = "UUID: " + m_bleUUID.toString() + ", handle : 0x";
 	char hex[5];
 	snprintf(hex, sizeof(hex), "%04x", m_handle);
 	res += hex;
 	res += " ";
-	if (m_properties & GATT_CHAR_PROP_READ) res += "Read ";
-	if (m_properties & GATT_CHAR_PROP_WRITE) res += "Write ";
-	if (m_properties & GATT_CHAR_PROP_WRITE_NO_RSP) res += "WriteNoResponse ";
-	if (m_properties & GATT_CHAR_PROP_BROADCAST) res += "Broadcast ";
-	if (m_properties & GATT_CHAR_PROP_NOTIFY) res += "Notify ";
-	if (m_properties & GATT_CHAR_PROP_INDICATE) res += "Indicate ";
+	if (m_properties & GATT_CHAR_PROP_READ)
+		res += "Read ";
+	if (m_properties & GATT_CHAR_PROP_WRITE)
+		res += "Write ";
+	if (m_properties & GATT_CHAR_PROP_WRITE_NO_RSP)
+		res += "WriteNoResponse ";
+	if (m_properties & GATT_CHAR_PROP_BROADCAST)
+		res += "Broadcast ";
+	if (m_properties & GATT_CHAR_PROP_NOTIFY)
+		res += "Notify ";
+	if (m_properties & GATT_CHAR_PROP_INDICATE)
+		res += "Indicate ";
 	return res;
 } // toString
 
-
-void BLECharacteristic::setValue(double& data64) {
+void BLECharacteristic::setValue(double &data64)
+{
 	double temp = data64;
-	setValue((uint8_t*)&temp, 8);
+	setValue((uint8_t *)&temp, 8);
 } // setValue
 
-void BLECharacteristic::setValue(float& data32) {
+void BLECharacteristic::setValue(float &data32)
+{
 	float temp = data32;
-	setValue((uint8_t*)&temp, 4);
+	setValue((uint8_t *)&temp, 4);
 } // setValue
 
-void BLECharacteristic::setValue(int& data32) {
+void BLECharacteristic::setValue(int &data32)
+{
 	uint8_t temp[4];
 	temp[0] = data32;
 	temp[1] = data32 >> 8;
@@ -225,14 +270,16 @@ void BLECharacteristic::setValue(int& data32) {
 	setValue(temp, 4);
 } // setValue
 
-void BLECharacteristic::setValue(uint16_t& data16) {
+void BLECharacteristic::setValue(uint16_t &data16)
+{
 	uint8_t temp[2];
 	temp[0] = data16;
 	temp[1] = data16 >> 8;
 	setValue(temp, 2);
 } // setValue
 
-void BLECharacteristic::setValue(uint32_t& data32) {
+void BLECharacteristic::setValue(uint32_t &data32)
+{
 	uint8_t temp[4];
 	temp[0] = data32;
 	temp[1] = data32 >> 8;
@@ -248,32 +295,38 @@ void BLECharacteristic::setValue(uint32_t& data32) {
  * @param [in] Set the value of the characteristic.
  * @return N/A.
  */
-void BLECharacteristic::setValue(std::string value) {
-	setValue((uint8_t*)(value.data()), value.length());
+void BLECharacteristic::setValue(std::string value)
+{
+	m_semaphoreSetValue.take();
+	m_value.setValue(value);
+	m_semaphoreSetValue.give();
 } // setValue
-
 
 /**
  * @brief Set the value of the characteristic.
  * @param [in] data The data to set for the characteristic.
  * @param [in] length The length of the data in bytes.
  */
-void BLECharacteristic::setValue(uint8_t* data, size_t length) {
-	m_semaphoreSetValue.take();  
+void BLECharacteristic::setValue(uint8_t *data, size_t length)
+{
+	m_semaphoreSetValue.take();
 	m_value.setValue(data, length);
-	m_semaphoreSetValue.give();  
+	m_semaphoreSetValue.give();
+	return;
 } // setValue
-
-
 
 /**
  * @brief Set the callback handlers for this characteristic.
  * @param [in] pCallbacks An instance of a callbacks structure used to define any callbacks for the characteristic.
  */
-void BLECharacteristic::setCallbacks(BLECharacteristicCallbacks* pCallbacks) {
-	if (pCallbacks != nullptr){
+void BLECharacteristic::setCallbacks(BLECharacteristicCallbacks *pCallbacks)
+{
+	if (pCallbacks != nullptr)
+	{
 		m_pCallbacks = pCallbacks;
-	} else {
+	}
+	else
+	{
 		m_pCallbacks = &defaultCallback;
 	}
 } // setCallbacks
@@ -284,7 +337,8 @@ BLECharacteristicCallbacks::~BLECharacteristicCallbacks() {}
  * @brief Get the UUID of the characteristic.
  * @return The UUID of the characteristic.
  */
-BLEUUID BLECharacteristic::getUUID() {
+BLEUUID BLECharacteristic::getUUID()
+{
 	return m_bleUUID;
 } // getUUID
 
@@ -292,24 +346,28 @@ BLEUUID BLECharacteristic::getUUID() {
  * @brief Retrieve the current raw data of the characteristic.
  * @return A pointer to storage containing the current characteristic data.
  */
-uint8_t* BLECharacteristic::getData() {
+uint8_t *BLECharacteristic::getData()
+{
 	return m_value.getData();
 } // getData
 
-uint8_t BLECharacteristic::getProperties() {
+uint8_t BLECharacteristic::getProperties()
+{
 	return m_properties;
 } // getProperties
 
-uint32_t BLECharacteristic::getAccessPermissions() {
+uint32_t BLECharacteristic::getAccessPermissions()
+{
 	return m_permissions;
 }
 
-
-BLEService* BLECharacteristic::getService() {
+BLEService *BLECharacteristic::getService()
+{
 	return m_pService;
 }
 
-uint8_t BLECharacteristic::getHandle() {
+uint8_t BLECharacteristic::getHandle()
+{
 	return m_handle;
 }
 
@@ -317,7 +375,8 @@ uint8_t BLECharacteristic::getHandle() {
  * @brief Retrieve the current value of the characteristic.
  * @return A pointer to storage containing the current characteristic value.
  */
-std::string BLECharacteristic::getValue() {
+std::string BLECharacteristic::getValue()
+{
 	return m_value.getValue();
 } // getValue
 
@@ -327,7 +386,8 @@ std::string BLECharacteristic::getValue() {
  * will block waiting a positive confirmation from the client.
  * @return N/A
  */
-void BLECharacteristic::indicate() {
+void BLECharacteristic::indicate()
+{
 	notify(false);
 } // indicate
 
@@ -337,9 +397,17 @@ void BLECharacteristic::indicate() {
  * will not block; it is a fire and forget.
  * @return N/A.
  */
-void BLECharacteristic::notify(bool is_notification) {
-    if(isNotify == true){
+void BLECharacteristic::notify(bool is_notification)
+{
+	RPC_DEBUG(">> notify: length: %d", m_value.getValue().length());
+
 	m_pCallbacks->onNotify(this);   // Invoke the notify callback.
+
+	if (getService()->getServer()->getConnectedCount() == 0) {
+		RPC_DEBUG("<< notify: No connected clients.");
+		m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_NO_CLIENT, 0);
+		return;
+	}
 
 	// Test to see if we have a 0x2902 descriptor.  If we do, then check to see if notification is enabled
 	// and, if not, prevent the notification.
@@ -347,144 +415,150 @@ void BLECharacteristic::notify(bool is_notification) {
 	BLE2902 *p2902 = (BLE2902*)getDescriptorByUUID((uint16_t)0x2902);
 	if(is_notification) {
 		if (p2902 != nullptr && !p2902->getNotifications()) {
+			RPC_DEBUG("<< notifications disabled; ignoring");
 			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_NOTIFY_DISABLED, 0);   // Invoke the notify callback.
 			return;
 		}
 	}
 	else{
 		if (p2902 != nullptr && !p2902->getIndications()) {
+			RPC_DEBUG("<< indications disabled; ignoring");
 			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_INDICATE_DISABLED, 0);   // Invoke the notify callback.
 			return;
 		}
 	}
 	for (auto &myPair : getService()->getServer()->getPeerDevices(false)) {
 		uint16_t _mtu = (myPair.second.mtu);
+		if (m_value.getValue().length() > _mtu - 3) {
+			RPC_DEBUG("- Truncating to %d bytes (maximum notify size)", _mtu - 3);
+		}
+
 		size_t length = m_value.getValue().length();
-        server_send_data(0, getService()->getHandle(), getHandle(),(uint8_t*)m_value.getValue().data(), (uint16_t)length, GATT_PDU_TYPE_ANY);
-        m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::SUCCESS_NOTIFY, 0);   // Invoke the notify callback.
+		if(!is_notification) // is indication
+			m_semaphoreConfEvt.take("indicate");
+			bool errRc = server_send_data(0, getService()->getHandle(), getHandle(), (uint8_t *)m_value.getData(), (uint16_t)length, GATT_PDU_TYPE_ANY);
+		if (errRc != true) {
+			m_semaphoreConfEvt.give();
+			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_GATT, errRc);   // Invoke the notify callback.
+			return;
+		}
+		if(!is_notification){ // is indication
+			if(!m_semaphoreConfEvt.timedWait("indicate", indicationTimeout)){
+				m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_INDICATE_TIMEOUT, 0);   // Invoke the notify callback.
+			} else {
+				uint32_t code =  m_semaphoreConfEvt.value();
+				if(code == 0) {
+					m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::SUCCESS_INDICATE, code);   // Invoke the notify callback.
+				} else {
+					m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::ERROR_INDICATE_FAILURE, code);
+				}
+			}
+		} else {
+			m_pCallbacks->onStatus(this, BLECharacteristicCallbacks::Status::SUCCESS_NOTIFY, 0);   // Invoke the notify callback.
+		}
 	}
-	}
+	RPC_DEBUG("<< notify");
+
 } // Notify
-
-
 
 /**
  * @brief Register a new characteristic with the ESP runtime.
  * @param [in] pService The service with which to associate this characteristic.
  */
-void BLECharacteristic::executeCreate(BLEService* pService) {
+void BLECharacteristic::executeCreate(BLEService *pService)
+{
 	m_pService = pService; // Save the service to which this characteristic belongs.
-    ble_char_t CHAR;
+	ble_char_t CHAR;
 	CHAR.uuid_length = getUUID().getNative()->len;
 	memcpy(&(CHAR.uuid), &(getUUID().getNative()->uuid), CHAR.uuid_length);
 	CHAR.properties = getProperties();
 	CHAR.permissions = getAccessPermissions();
 	uint8_t char_handle1 = ble_create_char(m_pService->getgiff(), CHAR);
-    m_handle = char_handle1;
-	BLEDescriptor* pDescriptor = m_descriptorMap.getFirst();
-	while (pDescriptor != nullptr) {
+	m_handle = char_handle1;
+	BLEDescriptor *pDescriptor = m_descriptorMap.getFirst();
+	while (pDescriptor != nullptr)
+	{
 		pDescriptor->executeCreate(this);
 		pDescriptor = m_descriptorMap.getNext();
 	} // End while
 
 } // executeCreate
 
-
 /**
  * Handle a GATT server event.
  */
 
-void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
+void BLECharacteristic::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data)
+{
 
-    ble_service_cb_data_t *cb_data = (ble_service_cb_data_t *)p_data;
-    RPC_DEBUG("ble_gatt_server_callback\n\r");
-    switch (cb_data->event)
-    {
-    case SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION:
-    {
-		if(cb_data->cb_data_context.cccd_update_data.cccbits == 1)
+	ble_service_cb_data_t *cb_data = (ble_service_cb_data_t *)p_data;
+	RPC_DEBUG("ble_gatt_server_callback: service_id: %d getHandle():%d cb_data->attrib_handle:%d\n\r", service_id, getHandle(), cb_data->attrib_handle);
+	if (getHandle() == cb_data->attrib_handle)
+	{
+		RPC_DEBUG("handleGATTServerEvent : %d\n\r",  cb_data->attrib_handle);
+		switch (cb_data->event)
 		{
-			isNotify = true;
-		}else
+		case SERVICE_CALLBACK_TYPE_INDIFICATION_NOTIFICATION:
 		{
-			isNotify = true;	
+			break;
 		}
-				
-        break;
-    }
-    case SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE:
-    {
-		if (getHandle() == cb_data->attrib_handle)
+		case SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE:
 		{
-		RPC_DEBUG("SERVICE_CALLBACK_TYPE_READ_CHAR_VALUE\n\r");
-		m_pCallbacks->onRead(this);
-		uint16_t maxOffset =  getService()->getServer()->getPeerMTU(getService()->getServer()->getconnId()) - 1;
-		std::string value = m_value.getValue();
-		if (value.length() - m_value.getReadOffset() < maxOffset) {
-			cb_data->cb_data_context.read_data.length = value.length() - m_value.getReadOffset();
-			cb_data->cb_data_context.read_data.offset = m_value.getReadOffset();
-			//memcpy(cb_data->cb_data_context.read_data.p_value, value.data() + cb_data->cb_data_context.read_data.offset, cb_data->cb_data_context.read_data.length);
-			cb_data->cb_data_context.read_data.p_value = (uint8_t*)(value.data() + cb_data->cb_data_context.read_data.offset);
-			m_value.setReadOffset(0);
-		}else
+			m_pCallbacks->onRead(this);
+			uint16_t maxOffset = getService()->getServer()->getPeerMTU(getService()->getServer()->getconnId()) - 1;
+			size_t length = m_value.getLength();
+			uint8_t *p_value = (uint8_t *)m_value.getData();
+			if (length - m_value.getReadOffset() < maxOffset)
+			{
+				cb_data->cb_data_context.read_data.length = length - m_value.getReadOffset();
+				cb_data->cb_data_context.read_data.offset = m_value.getReadOffset();
+				//memcpy(cb_data->cb_data_context.read_data.p_value, value.data() + cb_data->cb_data_context.read_data.offset, cb_data->cb_data_context.read_data.length);
+				cb_data->cb_data_context.read_data.p_value = (uint8_t *)(p_value);
+				m_value.setReadOffset(0);
+			}
+			else
+			{
+				cb_data->cb_data_context.read_data.length = maxOffset;
+				cb_data->cb_data_context.read_data.offset = m_value.getReadOffset();
+				//memcpy(cb_data->cb_data_context.read_data.p_value, value.data() + cb_data->cb_data_context.read_data.offset, cb_data->cb_data_context.read_data.length);
+				cb_data->cb_data_context.read_data.p_value = ((uint8_t *)p_value + cb_data->cb_data_context.read_data.offset);
+				m_value.setReadOffset(cb_data->cb_data_context.read_data.offset + maxOffset);
+			}
+			break;
+		}
+		case SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE:
 		{
-			cb_data->cb_data_context.read_data.length = maxOffset;
-			cb_data->cb_data_context.read_data.offset = m_value.getReadOffset();
-			//memcpy(cb_data->cb_data_context.read_data.p_value, value.data() + cb_data->cb_data_context.read_data.offset, cb_data->cb_data_context.read_data.length);
-			cb_data->cb_data_context.read_data.p_value = (uint8_t*)(value.data() + cb_data->cb_data_context.read_data.offset);
-			m_value.setReadOffset(cb_data->cb_data_context.read_data.offset + maxOffset);
+			if (getHandle() == cb_data->attrib_handle)
+			{
+				m_value.addPart(cb_data->cb_data_context.write_data.p_value, cb_data->cb_data_context.write_data.length);
+				m_value.commit();
+				setValue(cb_data->cb_data_context.write_data.p_value, cb_data->cb_data_context.write_data.length);
+				m_pCallbacks->onWrite(this);
+				break;
+			}
 		}
-        if (value.length() + 1 > maxOffset) {
-			// Too big for a single shot entry.
-			m_value.setReadOffset(maxOffset);
-			cb_data->cb_data_context.read_data.length = maxOffset;
-			cb_data->cb_data_context.read_data.offset = 0;
-			//memcpy(rsp.attr_value.value, value.data(), rsp.attr_value.len);
-			cb_data->cb_data_context.read_data.p_value = (uint8_t*)value.data();
-		} else {
-			// Will fit in a single packet with no callbacks required.
-			cb_data->cb_data_context.read_data.length = value.length();
-			cb_data->cb_data_context.read_data.offset = 0;
-			cb_data->cb_data_context.read_data.p_value = (uint8_t*)value.data();
-			//memcpy(rsp.attr_value.value, value.data(), rsp.attr_value.len);
+		default:
+			break;
 		}
-		}
-        break;
-    }
-    case SERVICE_CALLBACK_TYPE_WRITE_CHAR_VALUE:
-    {
-		if(getHandle() == cb_data->attrib_handle) {
-		m_value.addPart(cb_data->cb_data_context.write_data.p_value,cb_data->cb_data_context.write_data.length);
-		m_value.commit();
-		setValue(cb_data->cb_data_context.write_data.p_value, cb_data->cb_data_context.write_data.length);
-		m_pCallbacks->onWrite(this);
-        break;
-		}
-    }
-    default:
-        break;
-    }
-
-	m_descriptorMap.handleGATTServerEvent(service_id,p_data);
+	}
+	m_descriptorMap.handleGATTServerEvent(service_id, p_data);
 } // handleGATTServerEvent
-
-
-
 
 /**
  * @brief Callback function to support a read request.
  * @param [in] pCharacteristic The characteristic that is the source of the event.
  */
-void BLECharacteristicCallbacks::onRead(BLECharacteristic* pCharacteristic) {
+void BLECharacteristicCallbacks::onRead(BLECharacteristic *pCharacteristic)
+{
 
 } // onRead
-
 
 /**
  * @brief Callback function to support a write request.
  * @param [in] pCharacteristic The characteristic that is the source of the event.
  */
-void BLECharacteristicCallbacks::onWrite(BLECharacteristic* pCharacteristic) {
+void BLECharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic)
+{
 
 } // onWrite
 
@@ -492,7 +566,8 @@ void BLECharacteristicCallbacks::onWrite(BLECharacteristic* pCharacteristic) {
  * @brief Callback function to support a Notify request.
  * @param [in] pCharacteristic The characteristic that is the source of the event.
  */
-void BLECharacteristicCallbacks::onNotify(BLECharacteristic* pCharacteristic) {
+void BLECharacteristicCallbacks::onNotify(BLECharacteristic *pCharacteristic)
+{
 
 } // onNotify
 
@@ -502,6 +577,7 @@ void BLECharacteristicCallbacks::onNotify(BLECharacteristic* pCharacteristic) {
  * @param [in] s Status of the notification/indication
  * @param [in] code Additional code of underlying errors
  */
-void BLECharacteristicCallbacks::onStatus(BLECharacteristic* pCharacteristic, Status s, uint32_t code) {
+void BLECharacteristicCallbacks::onStatus(BLECharacteristic *pCharacteristic, Status s, uint32_t code)
+{
 
 } // onStatus
