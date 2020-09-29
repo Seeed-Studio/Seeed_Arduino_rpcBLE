@@ -195,5 +195,8 @@ void BLEService::stop() {
 void BLEService::handleGATTServerEvent(T_SERVER_ID service_id, void *p_data) {
 	RPC_DEBUG("into BLEService :: handleGATTServerEvent\n\r");
 	// Invoke the GATTS handler in each of the associated characteristics.
-	m_characteristicMap.handleGATTServerEvent(service_id,p_data);
+	if(service_id == getHandle()){
+		m_characteristicMap.handleGATTServerEvent(service_id,p_data);
+	}
+
 } // handleGATTServerEvent
