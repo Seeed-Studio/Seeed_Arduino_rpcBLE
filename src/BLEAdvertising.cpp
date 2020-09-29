@@ -200,8 +200,6 @@ void BLEAdvertising::setScanResponseData(BLEAdvertisementData& advertisementData
     memcpy(_scanRspData, (uint8_t*)advertisementData.getPayload().data(), advertisementData.getPayload().length());
     le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
     m_customScanResponseData = true;
-    //le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, advertisementData.getPayload().length(), (uint8_t*)advertisementData.getPayload().data());
-   // setScanRspData(beacon.getScanRsp(), beacon.scanRspSize);
 } // setScanResponseData
 
 
@@ -217,7 +215,6 @@ void BLEAdvertising::setAdvertisementType(uint8_t advType){
  * @return N/A.
  */
 void BLEAdvertising::start() {
-	
 	addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
 	addCompleteName(BLEDevice::ble_name.c_str());
 	setAdvData();

@@ -101,8 +101,8 @@ private:
     uint8_t _scanRspData[31] = {
                                     0x03,                             /* length */
                                     GAP_ADTYPE_APPEARANCE,            /* type="Appearance" */
-                                    LO_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
-                                    HI_WORD(GAP_GATT_APPEARANCE_UNKNOWN),
+                                    LO_WORD(GAP_GATT_APPEARANCE_MOUSE),
+                                    HI_WORD(GAP_GATT_APPEARANCE_MOUSE),
                                     };
     uint8_t  _advDataSize = 18;
     uint8_t  _scanRspDataSize = 4;   
