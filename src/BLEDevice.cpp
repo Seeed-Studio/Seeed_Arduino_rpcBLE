@@ -17,7 +17,7 @@ BLEServer *BLEDevice::m_pServer = nullptr;
 BLEAdvertising *BLEDevice::m_bleAdvertising = nullptr;
 std::string BLEDevice::ble_name = "";
 T_CLIENT_ID BLEClient::m_gattc_if = 0;
-uint16_t   BLEDevice::m_localMTU = 23;  // not sure if this variable is useful
+uint16_t BLEDevice::m_localMTU = 23; // not sure if this variable is useful
 std::map<uint16_t, conn_status_t> BLEDevice::m_connectedClientsMap;
 void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uint16_t disc_cause);
 void ble_dev_state_evt_handler(T_GAP_DEV_STATE new_state, uint16_t cause);
@@ -55,7 +55,6 @@ BLEClient *BLEDevice::getClient()
     return m_pClient;
 }
 
-
 /**
  * @brief Retrieve the Scan object that we use for scanning.
  * @return The scanning object reference.  This is a singleton object.  The caller should not
@@ -89,17 +88,19 @@ void BLEDevice::startAdvertising()
     getAdvertising()->start();
 } // startAdvertising
 
-void BLEDevice::stopAdvertising() {
+void BLEDevice::stopAdvertising()
+{
     getAdvertising()->stop();
 } // stopAdvertising
-/**
+  /**
  * @brief Get the BLE device address.
  * @return The BLE device address.
  */
-/* STATIC*/ BLEAddress BLEDevice::getAddress() {
-	uint8_t bt_addr[6];
+/* STATIC*/ BLEAddress BLEDevice::getAddress()
+{
+    uint8_t bt_addr[6];
     gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-	return BLEAddress(bt_addr);
+    return BLEAddress(bt_addr);
 } // getAddress
 
 /**
@@ -108,12 +109,13 @@ void BLEDevice::stopAdvertising() {
  * @param [in] serviceUUID
  * @param [in] characteristicUUID
  */
-/* STATIC */ std::string BLEDevice::getValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID) {
-	BLEClient* pClient = createClient();
-	pClient->connect(bdAddress);
-	std::string ret = pClient->getValue(serviceUUID, characteristicUUID);
-	pClient->disconnect();
-	return ret;
+/* STATIC */ std::string BLEDevice::getValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID)
+{
+    BLEClient *pClient = createClient();
+    pClient->connect(bdAddress);
+    std::string ret = pClient->getValue(serviceUUID, characteristicUUID);
+    pClient->disconnect();
+    return ret;
 } // getValue
 
 /**
@@ -122,20 +124,22 @@ void BLEDevice::stopAdvertising() {
  * @param [in] serviceUUID
  * @param [in] characteristicUUID
  */
-/* STATIC */ void BLEDevice::setValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID, std::string value) {
-	BLEClient* pClient = createClient();
-	pClient->connect(bdAddress);
-	pClient->setValue(serviceUUID, characteristicUUID, value);
-	pClient->disconnect();
+/* STATIC */ void BLEDevice::setValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID, std::string value)
+{
+    BLEClient *pClient = createClient();
+    pClient->connect(bdAddress);
+    pClient->setValue(serviceUUID, characteristicUUID, value);
+    pClient->disconnect();
 } // setValue
 
 /**
  * @brief Return a string representation of the nature of this device.
  * @return A string representation of the nature of this device.
  */
-/* STATIC */ std::string BLEDevice::toString() {
-	std::string res = "BD Address: " + getAddress().toString();
-	return res;
+/* STATIC */ std::string BLEDevice::toString()
+{
+    std::string res = "BD Address: " + getAddress().toString();
+    return res;
 } // toString
 
 /**
@@ -143,9 +147,10 @@ void BLEDevice::stopAdvertising() {
  * @param [in] address The address to add to the white list.
  */
 void BLEDevice::whiteListAdd(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,
-                                 T_GAP_REMOTE_ADDR_TYPE bd_type) {
+                             T_GAP_REMOTE_ADDR_TYPE bd_type)
+{
     operation = GAP_WHITE_LIST_OP_ADD;
-	le_modify_white_list(operation, bd_addr, bd_type);
+    le_modify_white_list(operation, bd_addr, bd_type);
 } // whiteListAdd
 
 /**
@@ -153,8 +158,9 @@ void BLEDevice::whiteListAdd(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,
  * @param [in] address The address to remove from the white list.
  */
 void BLEDevice::whiteListRemove(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,
-                                 T_GAP_REMOTE_ADDR_TYPE bd_type) {
-	operation = GAP_WHITE_LIST_OP_REMOVE;
+                                T_GAP_REMOTE_ADDR_TYPE bd_type)
+{
+    operation = GAP_WHITE_LIST_OP_REMOVE;
     le_modify_white_list(operation, bd_addr, bd_type);
 } // whiteListRemove
 
@@ -162,24 +168,26 @@ void BLEDevice::whiteListRemove(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,
  * @brief Setup local mtu that will be used to negotiate mtu during request from client peer
  * @param [in] mtu Value to set local mtu, should be larger than 23 and lower or equal to 517
  */
-void BLEDevice::setMTU(uint16_t mtu) {
-	gap_config_max_mtu_size(mtu);
+void BLEDevice::setMTU(uint16_t mtu)
+{
+    gap_config_max_mtu_size(mtu);
     m_localMTU = mtu;
 }
 
-uint16_t BLEDevice::getMTU() {
-	return m_localMTU;
+uint16_t BLEDevice::getMTU()
+{
+    return m_localMTU;
 }
 
-bool BLEDevice::getInitialized() {
-	return initialized;
+bool BLEDevice::getInitialized()
+{
+    return initialized;
 }
 
-BLEClient* BLEDevice::getClientByGattIf(uint16_t conn_id) {
-	return (BLEClient*)m_connectedClientsMap.find(conn_id)->second.peer_device;
+BLEClient *BLEDevice::getClientByGattIf(uint16_t conn_id)
+{
+    return (BLEClient *)m_connectedClientsMap.find(conn_id)->second.peer_device;
 }
-
-
 
 /**
  * @brief Initialize the %BLE environment.
@@ -196,6 +204,33 @@ BLEClient* BLEDevice::getClientByGattIf(uint16_t conn_id) {
         ble_init();
         ble_server_init(BLE_SERVER_MAX_APPS);
         ble_client_init(BLE_CLIENT_MAX_APPS);
+
+        /* GAP Bond Manager parameters */
+        uint8_t auth_pair_mode = GAP_PAIRING_MODE_PAIRABLE;
+        uint16_t auth_flags = GAP_AUTHEN_BIT_NONE;
+        uint8_t auth_io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT;
+        uint8_t auth_oob = false;
+        uint8_t auth_use_fix_passkey = false;
+        uint32_t auth_fix_passkey = 0;
+        uint8_t auth_sec_req_enable = false;
+        uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
+
+        /* Setup the GAP Bond Manager */
+        gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
+        gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(auth_flags), &auth_flags);
+        gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(auth_io_cap), &auth_io_cap);
+        gap_set_param(GAP_PARAM_BOND_OOB_ENABLED, sizeof(auth_oob), &auth_oob);
+        le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY, sizeof(auth_fix_passkey), &auth_fix_passkey);
+        le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY_ENABLE, sizeof(auth_use_fix_passkey),
+                          &auth_use_fix_passkey);
+        le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_ENABLE, sizeof(auth_sec_req_enable), &auth_sec_req_enable);
+        le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_REQUIREMENT, sizeof(auth_sec_req_flags),
+                          &auth_sec_req_flags);
+        
+        uint8_t  slave_init_mtu_req = true;
+        le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(slave_init_mtu_req),&slave_init_mtu_req);
+
+
         /*
      *  Register the Bluetooth callback function
      */
@@ -220,8 +255,10 @@ BLEClient* BLEDevice::getClientByGattIf(uint16_t conn_id) {
  * @brief de-Initialize the %BLE environment.
  * @param release_memory release the internal BT stack memory
  */
-/* STATIC */ void BLEDevice::deinit() {
-    if (!initialized) return;
+/* STATIC */ void BLEDevice::deinit()
+{
+    if (!initialized)
+        return;
     ble_deinit();
 }
 
@@ -238,14 +275,16 @@ BLEClient* BLEDevice::getClientByGattIf(uint16_t conn_id) {
     {
         BLEDevice::getScan()->gapCallbackDefault(cb_type, p_cb_data);
     }
-     
-    if (BLEDevice::m_pClient != nullptr) {
-		BLEDevice::m_pClient->handleGAPEvent(cb_type, p_cb_data);
-	}
 
-    if(m_bleAdvertising != nullptr) {
-		BLEDevice::getAdvertising()->handleGAPEvent(cb_type, p_cb_data);
-	}
+    if (BLEDevice::m_pClient != nullptr)
+    {
+        BLEDevice::m_pClient->handleGAPEvent(cb_type, p_cb_data);
+    }
+
+    if (m_bleAdvertising != nullptr)
+    {
+        BLEDevice::getAdvertising()->handleGAPEvent(cb_type, p_cb_data);
+    }
     return ret;
 } // gapEventHandler
 
@@ -285,24 +324,29 @@ void BLEDevice::addPeerDevice(void *peer, bool _client, uint16_t conn_id)
     conn_status_t status = {
         .peer_device = peer,
         .connected = true,
-        .mtu = 23};
+        .mtu = 247};
 
     m_connectedClientsMap.insert(std::pair<uint16_t, conn_status_t>(conn_id, status));
 }
 
-void BLEDevice::updatePeerDevice(void* peer, bool _client, uint16_t conn_id) {
-	std::map<uint16_t, conn_status_t>::iterator it = m_connectedClientsMap.find(0xff);
-	if (it != m_connectedClientsMap.end()) {
-		std::swap(m_connectedClientsMap[conn_id], it->second);
-		m_connectedClientsMap.erase(it);
-	}else{
-		it = m_connectedClientsMap.find(conn_id);
-		if (it != m_connectedClientsMap.end()) {
-			conn_status_t _st = it->second;
-			_st.peer_device = peer;
-			std::swap(m_connectedClientsMap[conn_id], _st);
-		}
-	}
+void BLEDevice::updatePeerDevice(void *peer, bool _client, uint16_t conn_id)
+{
+    std::map<uint16_t, conn_status_t>::iterator it = m_connectedClientsMap.find(0xff);
+    if (it != m_connectedClientsMap.end())
+    {
+        std::swap(m_connectedClientsMap[conn_id], it->second);
+        m_connectedClientsMap.erase(it);
+    }
+    else
+    {
+        it = m_connectedClientsMap.find(conn_id);
+        if (it != m_connectedClientsMap.end())
+        {
+            conn_status_t _st = it->second;
+            _st.peer_device = peer;
+            std::swap(m_connectedClientsMap[conn_id], _st);
+        }
+    }
 }
 
 void BLEDevice::removePeerDevice(uint16_t conn_id, bool _client)
@@ -346,7 +390,7 @@ void BLEDevice::ble_handle_gap_msg(T_IO_MSG *p_gap_msg)
     uint8_t conn_id;
     memcpy(&gap_msg, &p_gap_msg->u.param, sizeof(p_gap_msg->u.param));
 
-    RPC_DEBUG("ble_central_app_handle_gap_msg: subtype %d\n\r", p_gap_msg->subtype);
+    RPC_DEBUG("ble_handle_gap_msg: subtype %d\n\r", p_gap_msg->subtype);
 
     switch (p_gap_msg->subtype)
     {
@@ -466,8 +510,9 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
             {
                 BLEDevice::getServer()->getCallbacks()->onDisconnect(BLEDevice::getServer());
             }
+            le_adv_start();
         }
-     
+
         break;
     }
     case GAP_CONN_STATE_CONNECTED:
@@ -482,9 +527,9 @@ void ble_conn_state_evt_handler(uint8_t conn_id, T_GAP_CONN_STATE new_state, uin
             }
         }
 
-        if(BLEDevice::getClient() != nullptr)
+        if (BLEDevice::getClient() != nullptr)
         {
-             BLEDevice::updatePeerDevice(BLEDevice::getClient(), true, BLEDevice::getClient()->getGattcIf());
+            BLEDevice::updatePeerDevice(BLEDevice::getClient(), true, BLEDevice::getClient()->getGattcIf());
         }
         break;
     }
@@ -519,7 +564,7 @@ void ble_dev_state_evt_handler(T_GAP_DEV_STATE new_state, uint16_t cause)
     }
 
     // Assign different tasks according to different roles
-    // As a Client   
+    // As a Client
     if (BLEDevice::getClient() != nullptr)
     {
         if (ble_gap_dev_state.gap_scan_state != new_state.gap_scan_state)
@@ -608,7 +653,7 @@ void ble_param_update_evt_handler(uint8_t conn_id, uint8_t status, uint16_t caus
  */
 void ble_mtu_info_evt_handler(uint8_t conn_id, uint16_t mtu_size)
 {
-    if(BLEDevice::getClient()->getConnId() == conn_id)
+    if (BLEDevice::getClient()->getConnId() == conn_id)
     {
         BLEDevice::getClient()->setMTU(mtu_size);
     }

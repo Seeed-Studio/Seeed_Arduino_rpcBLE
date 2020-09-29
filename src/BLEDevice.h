@@ -31,9 +31,9 @@ public:
 	static std::string toString();        // Return a string representation of our device.
 	static void        whiteListAdd(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,T_GAP_REMOTE_ADDR_TYPE bd_type);   // Add an entry to the BLE white list.
 	static void        whiteListRemove(T_GAP_WHITE_LIST_OP operation, uint8_t *bd_addr,T_GAP_REMOTE_ADDR_TYPE bd_type); // Remove an entry from the BLE white list.
-	static void addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
-	static void removePeerDevice(uint16_t conn_id, bool client);
-	static void updatePeerDevice(void* peer, bool _client, uint16_t conn_id);
+	static void        addPeerDevice(void* peer, bool is_client, uint16_t conn_id);
+	static void        removePeerDevice(uint16_t conn_id, bool client);
+	static void        updatePeerDevice(void* peer, bool _client, uint16_t conn_id);
     static bool             getInitialized(); // Returns the state of the device, is it initialized or not?
 	static BLEAdvertising* 	getAdvertising();
 	static void		   		startAdvertising();
