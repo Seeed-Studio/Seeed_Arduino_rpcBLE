@@ -205,30 +205,30 @@ BLEClient *BLEDevice::getClientByGattIf(uint16_t conn_id)
         ble_server_init(BLE_SERVER_MAX_APPS);
         ble_client_init(BLE_CLIENT_MAX_APPS);
 
-        /* GAP Bond Manager parameters */
-        uint8_t auth_pair_mode = GAP_PAIRING_MODE_PAIRABLE;
-        uint16_t auth_flags = GAP_AUTHEN_BIT_NONE;
-        uint8_t auth_io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT;
-        uint8_t auth_oob = false;
-        uint8_t auth_use_fix_passkey = false;
-        uint32_t auth_fix_passkey = 0;
-        uint8_t auth_sec_req_enable = false;
-        uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
+        // /* GAP Bond Manager parameters */
+        // uint8_t auth_pair_mode = GAP_PAIRING_MODE_PAIRABLE;
+        // uint16_t auth_flags = GAP_AUTHEN_BIT_NONE;
+        // uint8_t auth_io_cap = GAP_IO_CAP_NO_INPUT_NO_OUTPUT;
+        // uint8_t auth_oob = false;
+        // uint8_t auth_use_fix_passkey = false;
+        // uint32_t auth_fix_passkey = 0;
+        // uint8_t auth_sec_req_enable = false;
+        // uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
 
-        /* Setup the GAP Bond Manager */
-        gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
-        gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(auth_flags), &auth_flags);
-        gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(auth_io_cap), &auth_io_cap);
-        gap_set_param(GAP_PARAM_BOND_OOB_ENABLED, sizeof(auth_oob), &auth_oob);
-        le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY, sizeof(auth_fix_passkey), &auth_fix_passkey);
-        le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY_ENABLE, sizeof(auth_use_fix_passkey),
-                          &auth_use_fix_passkey);
-        le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_ENABLE, sizeof(auth_sec_req_enable), &auth_sec_req_enable);
-        le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_REQUIREMENT, sizeof(auth_sec_req_flags),
-                          &auth_sec_req_flags);
+        // /* Setup the GAP Bond Manager */
+        // gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
+        // gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(auth_flags), &auth_flags);
+        // gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(auth_io_cap), &auth_io_cap);
+        // gap_set_param(GAP_PARAM_BOND_OOB_ENABLED, sizeof(auth_oob), &auth_oob);
+        // le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY, sizeof(auth_fix_passkey), &auth_fix_passkey);
+        // le_bond_set_param(GAP_PARAM_BOND_FIXED_PASSKEY_ENABLE, sizeof(auth_use_fix_passkey),
+        //                   &auth_use_fix_passkey);
+        // le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_ENABLE, sizeof(auth_sec_req_enable), &auth_sec_req_enable);
+        // le_bond_set_param(GAP_PARAM_BOND_SEC_REQ_REQUIREMENT, sizeof(auth_sec_req_flags),
+        //                   &auth_sec_req_flags);
         
-        uint8_t  slave_init_mtu_req = true;
-        le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(slave_init_mtu_req),&slave_init_mtu_req);
+        // uint8_t  slave_init_mtu_req = true;
+        // le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(slave_init_mtu_req),&slave_init_mtu_req);
 
 
         /*
