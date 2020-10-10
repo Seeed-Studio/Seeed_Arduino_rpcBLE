@@ -187,7 +187,7 @@ void BLEAdvertising::setDeviceAddress(uint8_t* addr, T_GAP_REMOTE_ADDR_TYPE type
  */
 void BLEAdvertising::setAdvertisementData(BLEAdvertisementData& advertisementData) {
     memcpy(_advData, (uint8_t*)advertisementData.getPayload().data(), advertisementData.getPayload().length());
-    le_adv_set_param(GAP_PARAM_ADV_DATA, _advDataSize, _advData);
+    le_adv_set_param(GAP_PARAM_ADV_DATA,sizeof(_advData), _advData);
     m_customAdvData = true; 
 } // setAdvertisementData
 
@@ -198,7 +198,7 @@ void BLEAdvertising::setAdvertisementData(BLEAdvertisementData& advertisementDat
  */
 void BLEAdvertising::setScanResponseData(BLEAdvertisementData& advertisementData) { 
     memcpy(_scanRspData, (uint8_t*)advertisementData.getPayload().data(), advertisementData.getPayload().length());
-    le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, _scanRspDataSize, _scanRspData);
+    le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, sizeof(_scanRspData), _scanRspData);
     m_customScanResponseData = true;
 } // setScanResponseData
 
@@ -215,9 +215,11 @@ void BLEAdvertising::setAdvertisementType(uint8_t advType){
  * @return N/A.
  */
 void BLEAdvertising::start() {
-	addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
-	addCompleteName(BLEDevice::ble_name.c_str());
-	setAdvData();
+	if(!m_customAdvData){
+		addFlags(GAP_ADTYPE_FLAGS_LIMITED | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED);
+		addCompleteName(BLEDevice::ble_name.c_str());
+		setAdvData();
+	}
 	le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(_advEvtType), &(_advEvtType));
     le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR_TYPE, sizeof(_advDirectType), &(_advDirectType));
     le_adv_set_param(GAP_PARAM_ADV_DIRECT_ADDR, sizeof(_advDirectAddr), (_advDirectAddr));
