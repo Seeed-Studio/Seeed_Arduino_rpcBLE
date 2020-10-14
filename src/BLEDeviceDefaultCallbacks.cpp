@@ -44,6 +44,15 @@ T_APP_RESULT BLEScan::gapCallbackDefault(uint8_t cb_type, void *p_cb_data) {
             }
             break;
         }
+        case GAP_MSG_LE_SCAN_CMPL:
+        {
+            RPC_DEBUG("GAP_MSG_LE_SCAN_CMPL");
+            m_semaphoreScanEnd.give();
+             if(m_scanCompleteCB != nullptr) {
+                 m_scanCompleteCB(m_scanResults);
+             }
+            break;
+        }         
         case GAP_MSG_LE_SCAN_INFO: {
             RPC_DEBUG("GAP_MSG_LE_SCAN_INFO:adv_type 0x%x, bd_addr %02x:%02x:%02x:%02x:%02x:%02x, remote_addr_type %d, rssi %d, data_len %d",
                             p_data->p_le_scan_info->adv_type,
@@ -82,8 +91,8 @@ T_APP_RESULT BLEScan::gapCallbackDefault(uint8_t cb_type, void *p_cb_data) {
             if (m_pAdvertisedDeviceCallbacks) {
                 m_pAdvertisedDeviceCallbacks->onResult(*advertisedDevice);
             }
-			
-			delete advertisedDevice;
+			if(found)
+				delete advertisedDevice;
             break;
         }
         default:
