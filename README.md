@@ -1,4 +1,4 @@
-# Seeed_Arduino_rpcBLE  [![Build Status](https://travis-ci.com/Seeed-Studio/Seeed_Arduino_rpcBLE.svg?branch=master)](https://travis-ci.com/Seeed-Studio/Seeed_Arduino_rpcBLE)
+# Seeed_Arduino_rpcBLE  [![Build Status](https://travis-ci.com/Seeed-Studio/Seeed-Arduino-Rpc-Ble.svg?branch=master)](https://travis-ci.com/Seeed-Studio/Seeed-Arduino-Rpc-Ble)
 Introduction
 Seeed Arduino rpcBLE library is support to Wio terminal BLE function. 
 
