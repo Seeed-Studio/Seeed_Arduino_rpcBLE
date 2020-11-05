@@ -13,7 +13,8 @@
 #include "BLEAddress.h"
 #include "BLEUUID.h"
 #include <vector>
-#include "Seeed_erpcUnified.h"
+#include "seeed_rpcUnified.h"
+#include "rtl_ble/ble_unified.h"
 
 class BLEScan;
 

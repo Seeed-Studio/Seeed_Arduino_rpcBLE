@@ -4,7 +4,6 @@
 #include <BLEDevice.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
-#include "Seeed_erpcUnified.h"
 int scanTime = 5; //In seconds
 BLEScan* pBLEScan;
 

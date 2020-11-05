@@ -6,7 +6,6 @@
  */
 
 #include "BLEDevice.h"
-#include "Seeed_erpcUnified.h"
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 

@@ -8,7 +8,8 @@
 #include "BLERemoteCharacteristic.h"
 #include "BLEUUID.h"
 #include "BLEFreeRTOS.h"
-#include "Seeed_erpcUnified.h"
+#include "seeed_rpcUnified.h"
+#include "rtl_ble/ble_unified.h"
 
 class BLEClient;
 class BLERemoteCharacteristic;

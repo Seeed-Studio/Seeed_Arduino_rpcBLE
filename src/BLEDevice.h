@@ -15,7 +15,8 @@
 #include "BLEFreeRTOS.h"
 #include "BLEClient.h"
 #include "BLEAdvertising.h"
-#include "Seeed_erpcUnified.h"
+#include "seeed_rpcUnified.h"
+#include "rtl_ble/ble_unified.h"
 typedef uint8_t T_CLIENT_ID;
 
 class BLEDevice {

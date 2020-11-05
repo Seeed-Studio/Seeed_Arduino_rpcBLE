@@ -13,7 +13,8 @@
 #include "BLEDescriptor.h"
 #include "BLEValue.h"
 #include "BLEFreeRTOS.h"
-#include "Seeed_erpcUnified.h"
+#include "seeed_rpcUnified.h"
+#include "rtl_ble/ble_unified.h"
 
 class BLEService;
 class BLEDescriptor;

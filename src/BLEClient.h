@@ -16,7 +16,8 @@
 #include "BLEAdvertisedDevice.h"
 #include "BLERemoteService.h"
 #include "BLERemoteDescriptor.h"
-#include "Seeed_erpcUnified.h"
+#include "seeed_rpcUnified.h"
+#include "rtl_ble/ble_unified.h"
 
 typedef uint8_t T_CLIENT_ID;
 typedef uint8_t T_SERVER_ID; 

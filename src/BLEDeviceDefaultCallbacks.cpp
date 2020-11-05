@@ -5,7 +5,8 @@
 #include "BLEAdvertisedDevice.h"
 #include "BLEFreeRTOS.h"
 #include "rpc_unified_log.h"
-#include "Seeed_erpcUnified.h"
+#include "seeed_rpcUnified.h"
+#include "rtl_ble/ble_unified.h"
 	
 /** @brief  APP Return Result List */
 T_APP_RESULT BLEScan::gapCallbackDefault(uint8_t cb_type, void *p_cb_data) {

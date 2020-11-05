@@ -6,7 +6,6 @@
 
 #include <BLEDevice.h>
 #include <BLEServer.h>
-#include "Seeed_erpcUnified.h"
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/

@@ -13,7 +13,8 @@
 #include "BLECharacteristic.h"
 #include "BLEFreeRTOS.h"
 #include "BLEValue.h"
-#include "Seeed_erpcUnified.h"
+#include "seeed_rpcUnified.h"
+#include "rtl_ble/ble_unified.h"
 
 typedef uint8_t T_SERVER_ID;
 class BLEService;
