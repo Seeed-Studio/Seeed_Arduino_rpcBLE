@@ -38,7 +38,7 @@ BLEAdvertisedDevice::BLEAdvertisedDevice() {
 
 
 T_GAP_REMOTE_ADDR_TYPE BLEAdvertisedDevice::getAddressType() {
-	return _addrType;
+	return m_addressType;
 }
 
 /**
