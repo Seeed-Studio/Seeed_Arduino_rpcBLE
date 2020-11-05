@@ -10,9 +10,8 @@
 #include <Arduino.h>
 #include "BLEScan.h"
 #include <functional>
+#include "BLEDevice.h"
 #include "rpc_unified_log.h"
-
-bool ble_scan_flags  = false;
 /**
  * Constructor
  */
@@ -83,9 +82,9 @@ void BLEScan::updateScanParams() {
  * @return The BLEScanResults.
  */
 BLEScanResults BLEScan::start(uint32_t duration, bool is_continue) {
-	if (!ble_scan_flags)
+	if (!BLEDevice::ble_start_flags)
 	{
-		ble_scan_flags = true;
+		BLEDevice::ble_start_flags = true;
 		ble_start();
 	}
 	if(start(duration, nullptr, is_continue)) {

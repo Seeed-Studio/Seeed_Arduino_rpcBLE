@@ -48,6 +48,7 @@ public:
     static uint16_t 	m_appId;
 	static uint16_t		m_localMTU;
     static std::string  ble_name;
+	static bool ble_start_flags;
 private:
     friend class BLEClient;
 	friend class BLEServer;

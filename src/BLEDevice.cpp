@@ -15,6 +15,7 @@ BLEScan *BLEDevice::_pBLEScan = nullptr;
 BLEClient *BLEDevice::m_pClient = nullptr;
 BLEServer *BLEDevice::m_pServer = nullptr;
 BLEAdvertising *BLEDevice::m_bleAdvertising = nullptr;
+bool BLEDevice::ble_start_flags = false;
 std::string BLEDevice::ble_name = "";
 T_CLIENT_ID BLEClient::m_gattc_if = 0;
 uint16_t BLEDevice::m_localMTU = 23; // not sure if this variable is useful

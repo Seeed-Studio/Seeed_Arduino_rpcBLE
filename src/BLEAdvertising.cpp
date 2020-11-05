@@ -20,7 +20,6 @@
 #include "BLEAdvertising.h"
 #include "BLEDevice.h"
 #include "rpc_unified_log.h"
-bool ble_start_flags  = false;
 
 /**
  * @brief Construct a default advertising object.
@@ -236,9 +235,9 @@ void BLEAdvertising::start() {
     }
     
     le_set_gap_param(GAP_PARAM_SLAVE_INIT_GATT_MTU_REQ, sizeof(_slaveInitMtuReq), &_slaveInitMtuReq);
-    if (!ble_start_flags)
+    if (!BLEDevice::ble_start_flags)
 	{
-		ble_start_flags = true;
+		BLEDevice::ble_start_flags = true;
 		ble_start();
 	}
     le_adv_start();   
