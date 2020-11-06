@@ -1,18 +1,35 @@
 #######################################
-# Syntax Coloring Map For atUnified
+# Syntax Coloring Map For rpcBLE
 #######################################
 
 #######################################
 # Library (KEYWORD3)
 #######################################
-
+BLEevice KEYWORD3
+rpcBLEevice KEYWORD3
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
-
+BLESCan KEYWORD1
+BLEAdvertisedDevice KEYWORD1
+BLEAdvertising KEYWORD1
+BLEClient KEYWORD1
+BLEServer KEYWORD1
+BLEUUID KEYWORD1
+BLEAddress KEYWORD1
+BLEDesciptor KEYWORD1
+BLECharacteristic KEYWORD1
+BLEService KEYWORD1
+BLE2902 KEYWORD1
+BLE2904 KEYWORD1
+BLEBeacon KEYWORD1
+BLEValue KEYWORD1
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
+connect	KEYWORD2
+disconnect KEYWORD2
+isConnected KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
