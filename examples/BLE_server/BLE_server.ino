@@ -4,7 +4,7 @@
     updates by chegewara
 */
 
-#include <BLEDevice.h>
+#include <rpcBLEDevice.h>
 #include <BLEServer.h>
 
 // See the following for generating UUIDs:

@@ -19,7 +19,7 @@
    In this example rxValue is the data received (only accessible inside that function).
    And txValue is the data to be sent, in this example just a byte incremented every second. 
 */
-#include <BLEDevice.h>
+#include <rpcBLEDevice.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
 

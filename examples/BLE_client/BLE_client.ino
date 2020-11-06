@@ -5,7 +5,7 @@
  * updated by chegewara
  */
 
-#include "BLEDevice.h"
+#include "rpcBLEDevice.h"
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 

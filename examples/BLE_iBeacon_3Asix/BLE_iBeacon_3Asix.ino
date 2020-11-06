@@ -18,7 +18,7 @@
 
 
 #include "sys/time.h"
-#include "BLEDevice.h"
+#include "rpcBLEDevice.h"
 #include "BLEBeacon.h"
 #include"LIS3DHTR.h"
 

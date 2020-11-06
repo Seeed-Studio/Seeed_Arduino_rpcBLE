@@ -1,7 +1,7 @@
 /*
    Ported to Arduino ESP32 by Evandro Copercini
 */
-#include <BLEDevice.h>
+#include <rpcBLEDevice.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 int scanTime = 5; //In seconds
