@@ -63,14 +63,37 @@ BLEUUID::BLEUUID() {
 }
 
 BLEUUID::BLEUUID(uint8_t* data, uint8_t length) {
-    if ((length == 2) || (length == 4) || (length == 16)) {
-        _length = length;
-        uint8_t i = 0;
-        for (i = 0; i < _length; i++) {
-            _dataNative[i] = data[i];
-            _data[i] = data[(_length - 1 - i)];
-        }
-    }
+
+	switch(length)
+	{
+		case 2:
+		{
+			m_uuid.len = 2;
+			break;
+		}
+		case 4:
+		{
+			m_uuid.len = 4;
+			break;
+		}
+		case 16:
+		{
+			m_uuid.len = 16;
+			break;
+		}
+
+		default:
+			return;
+	}
+
+	_length = length;
+	for (int i = 0; i < _length; i++) {
+		_dataNative[i] = data[i];
+		_data[i] = data[(_length - 1 - i)];
+	}
+
+	memcpy(&m_uuid.uuid, data, m_uuid.len);
+	m_valueSet = true;
 }
 
 const char* BLEUUID::str() {
