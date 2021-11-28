@@ -108,6 +108,30 @@ uint8_t* BLEAdvertisedDevice::getManufacturerData() {
 	return m_manufacturerData;
 } // getManufacturerData
 
+/**
+ * @brief Get the manufacturer data.
+ * @return The manufacturer data of the advertised device.
+ */
+uint8_t BLEAdvertisedDevice::getManufacturerDataLength() {
+	return m_manufacturerDataLength;
+} // getManufacturerData
+
+/**
+ * @brief Get the service data.
+ * @return The service data of the advertised device.
+ */
+uint8_t* BLEAdvertisedDevice::getServiceData() {
+	return m_serviceData;
+} // getServiceData
+
+/**
+ * @brief Get the service data.
+ * @return The service data of the advertised device.
+ */
+uint8_t BLEAdvertisedDevice::getServiceDataLength() {
+	return m_serviceDataLength;
+} // getServiceData
+
 
 /**
  * @brief Does this advertisement have an appearance value?
@@ -177,6 +201,24 @@ std::string BLEAdvertisedDevice::toString() {
 		res += ", txPower: ";
 		res += val;
 	}
+	if (haveManufacturerData()) {
+		res += ", manufData: ";
+        for(int pos = 0; pos < m_manufacturerDataLength; pos++)
+        {
+            char val[4];
+            snprintf(val, sizeof(val), "%02X", m_manufacturerData[pos]);
+            res += val;
+        }
+	}
+	if (haveServiceData()) {
+		res += ", serviceData: ";
+        for(int pos = 0; pos < m_serviceDataLength; pos++)
+        {
+            char val[4];
+            snprintf(val, sizeof(val), "%02X", m_serviceData[pos]);
+            res += val;
+        }
+	}
 	return res;
 } // toString
 
@@ -197,6 +239,14 @@ bool BLEAdvertisedDevice::haveTXPower() {
 bool BLEAdvertisedDevice::haveManufacturerData() {
 	return m_haveManufacturerData;
 } // haveManufacturerData
+
+/**
+ * @brief Does this advertisement have service data?
+ * @return True if there is service data present.
+ */
+bool BLEAdvertisedDevice::haveServiceData() {
+	return m_haveServiceData;
+} // haveServiceData
 
 /**
  * @brief Does this advertisement have a signal strength value?
@@ -343,6 +393,14 @@ void BLEAdvertisedDevice::parseAdvertisement(T_LE_CB_DATA *p_data) {
                     m_manufacturer = (((uint16_t)buffer[1] << 8)|(buffer[0]));
                     memcpy(m_manufacturerData, (buffer + 2), data_len);
                     m_manufacturerDataLength = data_len;
+                    m_haveManufacturerData = true;
+                    break;
+                }
+
+                case GAP_ADTYPE_SERVICE_DATA: {
+                    memcpy(m_serviceData, buffer, length);
+                    m_serviceDataLength = length;
+                    m_haveServiceData = true;
                     break;
                 }
 

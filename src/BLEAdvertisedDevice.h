@@ -34,6 +34,9 @@ public:
 	uint16_t    getAppearance();
 	int8_t      getTXPower();
 	uint8_t*    getManufacturerData();
+	uint8_t     getManufacturerDataLength();
+	uint8_t*    getServiceData();
+	uint8_t     getServiceDataLength();
 	int         getRSSI();
 	BLEScan*    getScan();
 	std::string toString();
@@ -46,6 +49,7 @@ public:
 	bool		isAdvertisingService(BLEUUID uuid);
 	T_GAP_REMOTE_ADDR_TYPE getAddressType();
 	bool        haveManufacturerData();
+	bool        haveServiceData();
 private:
 	friend class BLEScan;
 	void clear(void);
@@ -74,6 +78,8 @@ private:
     uint16_t    m_manufacturer = 0;
     uint8_t     m_manufacturerData[27] = {0};
     uint8_t     m_manufacturerDataLength = 0;
+    uint8_t     m_serviceData[27] = {0};
+    uint8_t     m_serviceDataLength = 0;
 	BLEUUID     _serviceList[7];        // A 31byte advert can only fit a maximum of 7 service UUIDs of 16bit length
 	uint8_t     _serviceCount = 0;	
 	int         m_deviceType;	
